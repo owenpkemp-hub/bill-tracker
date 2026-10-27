@@ -87,7 +87,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-wei
 <div id="drop-zone" class="drop-zone" tabindex="0" role="button">Drop a screenshot or Excel file here, or tap to choose one</div>
 <div class="field"><label>Choose a file — screenshot, Excel, CSV, or JSON backup</label><input type="file" id="import-file" accept="image/*,.xlsx,.xls,.csv,.json"></div>
 <img id="import-preview" style="display:none;max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;margin-bottom:12px" alt="File preview">
-<p><button class="primary" id="read-btn">Read file</button> <button id="import-clear">Clear file</button> <button id="copy-muse-btn">Copy message for your AI assistant</button></p>
+<p><button class="primary" id="read-btn">Read file</button> <button id="import-clear">Clear file</button> <button id="clear-saved-btn">Start clean — clear saved moves</button> <button id="copy-muse-btn">Copy message for your AI assistant</button></p>
 <p class="muted small" id="import-status">No file loaded yet. For a screenshot, in-app OCR is a draft — always check the review table. An Excel file is more accurate than a screenshot, because it reads the numbers directly instead of guessing them from pixels. If tapping Choose file does nothing, open this page in Safari (not the in-app preview) and try again.</p>
 <div class="field"><label>How to apply reviewed rows</label><select id="ocr-mode"><option value="merge">Merge — skip exact duplicates already in the tracker</option><option value="replace">Replace all upcoming moves with reviewed rows</option></select></div>
 <div id="excel-meta" style="display:none"><div class="field"><label>Checking balance from Excel — as-of date</label><input type="date" id="excel-asof"></div><div class="field"><label>Checking balance from Excel ($)</label><input type="number" id="excel-balance" step="1"></div><p class="muted small">Apply will also set your as-of date, balance, and budget from Excel. Clear these fields to keep your current as-of, balance, and budget instead.</p></div>
@@ -478,6 +478,10 @@ $("import-clear").onclick=function(){
   $("import-file").value=""; currentImportFile=null; excelImportActive=false; excelBudget=[]; $("excel-meta").style.display="none"; $("import-preview").style.display="none"; $("import-preview").src=""; ocrRows=[]; renderOCRReview();
   $("import-status").textContent="File cleared.";
 };
+$("clear-saved-btn").onclick=function(){
+  if(!confirm("Clear all saved moves and start blank? Your browser-saved edits will be lost.")) return;
+  localStorage.removeItem(KEY); state=deepCopy(SNAPSHOT); excelImportActive=false; excelBudget=[]; ocrRows=[]; renderOCRReview(); clearEditForm(); $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll(); $("import-status").textContent="Saved data cleared. Now import the Excel file fresh.";
+};
 $("read-btn").onclick=async function(){
   var f=currentImportFile || ($("import-file").files && $("import-file").files[0]);
   if(!f){$("import-status").textContent="Choose a file first — screenshot, Excel, CSV, or JSON backup."; return;}
@@ -513,7 +517,7 @@ $("read-btn").onclick=async function(){
       if(foundParsed){$("excel-asof").value=foundParsed.asof||""; $("excel-balance").value=foundParsed.balance||0; $("excel-meta").style.display="block";}
       else {$("excel-meta").style.display="none";}
       renderOCRReview();
-      $("import-status").textContent=ocrRows.length?("Excel read from sheet '"+foundSheet+"': "+ocrRows.length+" future move(s), as-of "+(foundParsed?foundParsed.asof:"?")+" balance $"+(foundParsed?foundParsed.balance:"?")+", plus "+excelBudget.length+" budget line(s). Check every row below before applying — Apply will also set your as-of, balance, and budget from Excel unless you clear those fields."):("No dated rows found in that Excel file. Try the Tracker tab, or a screenshot of it.");
+      $("import-status").textContent=ocrRows.length?("Excel read from sheet '"+foundSheet+"': "+ocrRows.length+" future move(s), as-of "+(foundParsed?foundParsed.asof:"?")+" balance $"+(foundParsed?foundParsed.balance:"?")+", plus "+excelBudget.length+" budget line(s). Check every row below before applying — Apply REPLACES all moves with these Excel rows (old bad imports are cleared; only moves you marked paid, matched by date and amounts, stay paid) and also sets your as-of, balance, and budget from Excel unless you clear those fields."):("No dated rows found in that Excel file. Try the Tracker tab, or a screenshot of it.");
     }catch(err){$("import-status").textContent="Excel read failed: "+err.message;}
     return;
   }
@@ -574,14 +578,27 @@ $("exitDemoBtn").onclick=function(){
 $("ocr-apply").onclick=function(){
   var rows=collectOCRReview();
   if(!rows.length){$("ocr-note").textContent="No valid reviewed rows to apply."; return;}
-  if($("ocr-mode").value==="replace"){state.events=state.events.filter(function(e){return e.paid;});}
+  if(excelImportActive){
+    var paidByKey={};
+    state.events.forEach(function(e){if(e.paid) paidByKey[e.date+"|"+e.out+"|"+e.in]=true;});
+    state.events=rows.map(function(r,i){return {id:"xl-"+Date.now()+"-"+i, date:r.date, label:r.label, out:r.out, in:r.in, paid:!!paidByKey[r.date+"|"+r.out+"|"+r.in]};});
+    if($("excel-asof").value && $("excel-balance").value!==""){state.asof=$("excel-asof").value; state.balance=Number($("excel-balance").value)||0; if(excelBudget.length) state.budget=deepCopy(excelBudget);}
+    save(); renderAll(); $("ocr-note").textContent="Excel applied — replaced all moves with Excel's "+rows.length+" future move(s). Old imports are gone; check the timeline — balances recalculated.";
+    ocrRows=[]; renderOCRReview(); return;
+  }
+  if($("ocr-mode").value==="replace"){
+    var paidByKey2={};
+    state.events.forEach(function(e){if(e.paid) paidByKey2[e.date+"|"+e.out+"|"+e.in]=true;});
+    state.events=rows.map(function(r,i){return {id:"ocr-"+Date.now()+"-"+i, date:r.date, label:r.label, out:r.out, in:r.in, paid:!!paidByKey2[r.date+"|"+r.out+"|"+r.in]};});
+    save(); renderAll(); $("ocr-note").textContent="Replaced moves with "+rows.length+" reviewed row(s). Check the timeline — balances recalculated.";
+    ocrRows=[]; renderOCRReview(); return;
+  }
   var added=0, skipped=0;
   rows.forEach(function(r){
-    var exists=state.events.some(function(e){return e.date===r.date && e.label===r.label && e.out===r.out && e.in===r.in && !e.paid;});
-    if($("ocr-mode").value==="merge" && exists){skipped++; return;}
+    var exists=state.events.some(function(e){return e.date===r.date && e.out===r.out && e.in===r.in && !e.paid;});
+    if(exists){skipped++; return;}
     state.events.push({id:"ocr-"+Date.now()+"-"+added, date:r.date, label:r.label, out:r.out, in:r.in, paid:false}); added++;
   });
-  if(excelImportActive && $("excel-asof").value && $("excel-balance").value!==""){state.asof=$("excel-asof").value; state.balance=Number($("excel-balance").value)||0; if(excelBudget.length) state.budget=deepCopy(excelBudget);}
   save(); renderAll(); $("ocr-note").textContent="Applied "+added+" row(s)"+(skipped?" · skipped "+skipped+" duplicate(s)":"")+". Check the timeline — balances recalculated.";
   ocrRows=[]; renderOCRReview();
 };
