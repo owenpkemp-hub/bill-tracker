@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bill Tracker">
+<meta name="theme-color" content="#F7F3EB">
+<script>try{var _t=localStorage.getItem('budget-bill-tracker-theme');if(_t==='dark'||_t==='light'){document.documentElement.setAttribute('data-theme',_t);}}catch(e){}</script>
+<title>Bill Tracker</title>
+<link rel="icon" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box}
+:root{--bg:#F7F3EB;--ink:#1C1E22;--muted:#6B6A63;--line:#D8D0BE;--track:#E5DDD0;--input-bg:#FFFDF8;--input-border:#B8B0A0;--accent:#1E6B4A;--danger:#A93226;--on-accent:#ffffff;--banner-bg:#FFF3C4;--banner-border:#8A6D00}
+[data-theme="dark"]{--bg:#0B0D10;--ink:#E6E8EB;--muted:#9AA0A8;--line:#23272F;--track:#23272F;--input-bg:#12151A;--input-border:#2A2F38;--accent:#3DDC97;--danger:#F87171;--on-accent:#07130C;--banner-bg:#1A1608;--banner-border:#3A2F12}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.55;touch-action:manipulation;overflow-x:hidden}
+button,input,select{touch-action:manipulation;font-size:16px}
+svg{display:block;max-width:100%;height:auto}
+*{-webkit-tap-highlight-color:transparent}
+body,nav,button,input,select,.move,.month-row,.budget-row{transition:background-color .25s ease,color .25s ease,border-color .25s ease}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:hover{background:var(--track)} button.primary:hover{filter:brightness(1.08)}
+.serif{font-family:Georgia,"Times New Roman",serif}
+.wrap{max-width:760px;margin:0 auto;padding:0 max(18px, env(safe-area-inset-left)) max(56px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-right))}
+nav{position:sticky;top:0;background:var(--bg);border-bottom:2px solid var(--ink);padding:max(12px, env(safe-area-inset-top)) 0 12px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;z-index:5}
+nav a{color:var(--ink);font-weight:700;text-decoration:none} nav a:hover{text-decoration:underline}
+.muted{color:var(--muted);font-size:13px} .small{font-size:13px} .green{color:var(--accent)} .red{color:var(--danger)}
+h1{font-size:34px;margin:18px 0 4px;line-height:1.1} h2{font-size:12px;text-transform:uppercase;letter-spacing:.12em;margin:0 0 14px;border-bottom:1px solid var(--line);padding-bottom:8px}
+section{padding:30px 0;border-top:2px solid var(--ink)}
+section#overview{background:var(--input-bg);border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:18px} section:first-of-type{border-top:none}
+.stat{font-size:38px;font-weight:700;line-height:1.1} .stat.serif{font-size:48px}
+.rule{border-top:1px solid #D8D0BE;margin:18px 0}
+.move{border:1px solid var(--line);border-left-width:4px;border-radius:12px;padding:14px 16px;margin-bottom:10px;background:var(--input-bg)} .move-out{border-left-color:var(--danger)} .move-in{border-left-color:var(--accent)} .move-both{border-left-color:var(--accent)}
+.move-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap} .move-nums{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px}
+.move-actions{display:flex;gap:8px;margin-top:10px} .move-actions button{flex:1;min-height:44px}
+input,select{font:inherit;font-size:16px;padding:12px;border-radius:8px;border:1px solid var(--input-border);background:var(--input-bg);color:var(--ink);width:100%}
+button{font:inherit;font-size:16px;padding:12px 16px;min-height:44px;border-radius:8px;border:1px solid var(--ink);background:var(--input-bg);color:var(--ink);cursor:pointer;font-weight:700}
+button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)} button.danger{color:var(--danger);border-color:var(--danger)}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.field{margin-bottom:14px}
+#js-banner{background:var(--banner-bg);border:1px solid var(--banner-border);border-radius:8px;padding:12px;margin:16px 0}
+.warn{border:2px solid var(--danger);border-radius:8px;padding:14px}
+.month-row{border-top:1px solid var(--line);padding:12px 0} .month-row:last-child{border-bottom:1px solid var(--line)}
+.month-label{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hbar{display:flex;gap:10px;align-items:center;margin-top:6px} .hbar-track{flex:1;height:12px;background:var(--track);border-radius:99px;overflow:hidden} .hbar-track i{display:block;height:100%} .hbar-track i.out{background:var(--danger)} .hbar-track i.inn{background:var(--accent)}
+.budget-row{border-top:1px solid var(--line);padding:12px 0} .budget-row:last-child{border-bottom:1px solid var(--line)}
+.budget-edit{display:grid;grid-template-columns:1fr 150px 44px;gap:8px;align-items:center} @media(max-width:560px){.budget-edit{grid-template-columns:1fr 44px}.budget-edit input[data-bname]{grid-column:1/-1}}
+</style></head><body><div class="wrap">
+<nav><a href="#overview">Overview</a><a href="#controls">Controls</a><a href="#edit">Add / Edit</a><a href="#timeline">Timeline</a><a href="#charts">Charts</a><a href="#budget">Budget</a><button id="themeBtn" style="margin-left:auto">🌙 Dark mode</button></nav>
+<div id="demo-banner" style="display:none;background:var(--banner-bg);border:1px solid var(--banner-border);border-radius:8px;padding:12px;margin:16px 0"><b>Demo mode — fictional data, not your real numbers.</b> Your personal data is saved and untouched, and demo edits are not saved. <button id="exitDemoBtn">Exit demo</button></div>
+<div id="js-banner"><b>Snapshot view</b> — blank to start, shown even if scripts are blocked. Add your first bill, or load demo data to see how it works. Open in a real browser to edit, mark paid, and redraw the charts. In preview, buttons and inputs will not run — that is the viewer, not a broken file.</div>
+<p class="muted">Demo-friendly · Start blank or load demo data · Your data stays in your browser only</p>
+<h1 class="serif">Bill Tracker</h1>
+<p class="muted">A paper ledger for the same question: how far out is each bill, and what does checking look like after it? Same numbers, same saved edits as v2 — a completely different page around them.</p>
+
+<section id="overview">
+<h2>Overview</h2>
+<div class="muted">CHECKING ON <span id="hero-asof-label">OCT 27, 2026</span></div>
+<div class="stat serif" id="hero-balance">$0</div>
+<div class="rule"></div>
+<div><div class="muted">NEXT MONEY IN</div><div class="stat serif green" id="next-in">—</div><div class="muted">in 3 days</div></div>
+<div class="rule"></div>
+<div><div class="muted">TIGHTEST POINT AHEAD</div><div class="stat serif red" id="tightest">—</div><div class="muted" id="next-out">No upcoming bill yet</div></div>
+<div class="warn" id="warning-box" style="display:none"></div>
+<p class="muted small" id="saved-note">Saved in this browser only.</p>
+</section>
+
+<section id="controls">
+<h2>Controls — browser only</h2>
+<div class="field"><label>As-of date</label><input type="date" id="asof" value="2026-10-27"></div>
+<div class="field"><label>Checking balance on that date ($)</label><input type="number" id="balance" value="0" step="1"></div>
+<p class="muted small">Typing in these two fields updates the overview and charts immediately. If you move as-of by hand, update the balance to your actual balance on that date.</p>
+<p><button id="rollBtn">Roll forward to today</button> <button id="demoBtn">Load demo data</button></p>
+<p><button id="resetBtn">Reset to Excel snapshot</button> <button id="exportBtn">Export backup (JSON)</button></p>
+<div class="field"><label>Import a backup</label><input type="file" id="import-file" accept=".json,application/json"></div>
+<div class="field"><label>Show</label><select id="range-filter"><option value="all">All upcoming</option><option value="7">Next 7 days</option><option value="30">Next 30 days</option></select></div>
+<div class="field"><label>Move type</label><select id="type-filter"><option value="all">All moves</option><option value="out">Bills out only</option><option value="in">Money in only</option></select></div>
+<div class="field"><label>Search bills</label><input id="search" placeholder="Search bills…"></div>
+</section>
+
+<section id="edit">
+<h2>Add / edit a move — browser only</h2>
+<p class="muted small" id="edit-title">Adding a new move. In a browser, tap Edit on any timeline move to load it here.</p>
+<div class="field"><label>Name</label><input id="edit-name" placeholder="e.g. Electric"></div>
+<div class="field"><label>Date</label><input type="date" id="edit-date" value="2026-11-05"></div>
+<div class="field"><label>Money out ($)</label><input type="number" id="edit-out" placeholder="0" step="1"></div>
+<div class="field"><label>Money in ($)</label><input type="number" id="edit-in" placeholder="0" step="1"></div>
+<p><button class="primary" id="edit-save">Save move</button> <button id="edit-cancel" style="display:none">Cancel edit</button> <button class="danger" id="edit-delete" style="display:none">Delete move</button></p>
+<p class="muted small" id="edit-note"></p>
+<p class="muted small">A move can have both out and in on the same day. Leave the other field blank or 0.</p>
+</section>
+
+<section id="timeline">
+<h2>Timeline — upcoming moves <span class="muted" id="upcoming-count"></span></h2>
+<p class="muted small">Read top to bottom in date order. “After” is the running checking balance after that move. In a browser, each move gets Edit, Paid, and Delete buttons underneath it. In preview, this baked list is the snapshot — no buttons, because preview blocks scripts.</p>
+<div id="upcoming-body"><p class="muted small">No moves yet — add your first bill below, or load demo data to see how it works.</p></div>
+<h2 style="margin-top:28px">Paid moves</h2>
+<div id="paid-body">Nothing marked paid yet.</div>
+</section>
+
+<section id="charts">
+<h2>Charts</h2>
+<h2>Forecast — full, to Jan 8, 2027</h2>
+<div id="forecast-wrap"><p class="muted small">No data yet.</p></div>
+<p class="muted small">The full forecast shows every move to the end of your list. The tight-period chart below crops to the early moves, so a dip is visible even when a later spike towers over it.</p>
+<h2 style="margin-top:28px">Forecast — tight period only, to Dec 11</h2>
+<div id="zoom-wrap"><p class="muted small">No data yet.</p></div>
+<p class="muted small">Same line, cropped to the early moves, so a dip is visible even when a later spike towers over it. This chart redraws live in a browser when you edit a move.</p>
+<h2 style="margin-top:28px">Money by month — out vs in</h2>
+<div id="monthly-wrap"><p class="muted small">No data yet.</p></div>
+<p class="muted small">Red = out, green = in.</p>
+<h2 style="margin-top:28px">Largest bills ahead</h2>
+<div id="largest-wrap"><p class="muted small">No data yet.</p></div>
+</section>
+
+<section id="budget">
+<h2>Monthly budget — editable in a browser</h2>
+<p class="muted small" id="budget-totals">Income <b class="green">$0/mo</b> · Out <b>$0/mo</b> · Surplus <b>$0/mo</b>.</p>
+<p class="muted small">In preview, these are the baked Excel lines. In a browser, each line becomes editable: change the name or amount and press Enter or tap away, and the totals and bars update. Negative = money out, positive = income.</p>
+<div id="budget-body"><p class="muted small">No budget lines yet.</p></div>
+<div style="margin-top:18px">
+<div class="field"><label>New budget line name</label><input id="budget-add-name" placeholder="e.g. Streaming"></div>
+<div class="field"><label>Amount per month ($) — negative for out</label><input type="number" id="budget-add-amount" placeholder="-15"></div>
+<p><button id="budget-add-btn">Add budget line</button></p>
+</div>
+</section>
+
+<p class="muted small" style="margin-top:24px">Demo-friendly version of the Bill Tracker. Your data stays in your browser only. Demo data is fictional and clearly labeled.</p>
+</div>
+<script>
+const SNAPSHOT={"asof":"2026-10-27","balance":0,"events":[],"budget":[]};
+const DEMO={asof:"2026-10-27",balance:3150,events:[
+{id:"d-pay1",date:"2026-11-03",label:"Paycheck",out:0,in:2600,paid:false},
+{id:"d-rent1",date:"2026-11-05",label:"Rent",out:1250,in:0,paid:false},
+{id:"d-elec",date:"2026-11-10",label:"Electric",out:142,in:0,paid:false},
+{id:"d-net",date:"2026-11-15",label:"Internet",out:85,in:0,paid:false},
+{id:"d-gym",date:"2026-11-20",label:"Gym",out:45,in:0,paid:false},
+{id:"d-pay2",date:"2026-11-28",label:"Paycheck",out:0,in:2600,paid:false},
+{id:"d-rent2",date:"2026-12-01",label:"Rent",out:1250,in:0,paid:false},
+{id:"d-ins",date:"2026-12-05",label:"Car insurance",out:210,in:0,paid:false},
+{id:"d-pay3",date:"2026-12-12",label:"Paycheck",out:0,in:2600,paid:false},
+{id:"d-gifts",date:"2026-12-18",label:"Holiday gifts",out:320,in:0,paid:false}],
+budget:[
+{id:"bd-inc",name:"Income",amount:5200},
+{id:"bd-rent",name:"Rent",amount:-1250},
+{id:"bd-util",name:"Utilities",amount:-220},
+{id:"bd-groc",name:"Groceries",amount:-400},
+{id:"bd-trans",name:"Transport",amount:-180},
+{id:"bd-sub",name:"Subscriptions",amount:-60},
+{id:"bd-save",name:"Savings",amount:-500},
+{id:"bd-fun",name:"Fun",amount:-150}]};
+const KEY="budget-bill-tracker-v2"; const OLDKEY="budget-bill-tracker-v1";
+function deepCopy(o){return JSON.parse(JSON.stringify(o));}
+let state=null;
+try{state=JSON.parse(localStorage.getItem(KEY)||"null");}catch(e){state=null;}
+if(!state){
+  try{
+    const old=JSON.parse(localStorage.getItem(OLDKEY)||"null");
+    if(old && Array.isArray(old.events)){
+      state=deepCopy(SNAPSHOT); state.asof=old.asof||SNAPSHOT.asof; state.balance=(typeof old.balance==="number"?old.balance:SNAPSHOT.balance);
+      state.events=old.events.map(function(e){return {id:String(e.id),date:e.date,label:e.label||"Move",out:Number(e.out)||0,in:Number(e.in)||0,paid:!!(old.paid && old.paid[e.id])};});
+    }
+  }catch(e){}
+}
+if(!state) state=deepCopy(SNAPSHOT);
+if(!Array.isArray(state.budget)) state.budget=deepCopy(SNAPSHOT.budget);
+if(!Array.isArray(state.events)) state.events=deepCopy(SNAPSHOT.events);
+state.events.forEach(function(e){e.paid=!!e.paid; e.out=Number(e.out)||0; e.in=Number(e.in)||0;});
+let editingId=null; let rangeFilter="all"; let typeFilter="all"; let searchText=""; let demoMode=false; let personalState=null;
+const banner=document.getElementById("js-banner"); if(banner) banner.style.display="none";
+const $=function(id){return document.getElementById(id);};
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function money(v){return v<0?"−$"+Math.round(Math.abs(v)).toLocaleString():"$"+Math.round(v).toLocaleString();}
+function parseDate(s){return new Date(s+"T00:00:00");}
+function daysTo(d){return Math.round((parseDate(d)-parseDate(state.asof))/86400000);}
+function fmtDate(s){try{return parseDate(s).toLocaleDateString("en-US",{month:"short",day:"numeric"});}catch(e){return s;}}
+function fmtMonth(key){var parts=key.split("-"); var d=new Date(Number(parts[0]),Number(parts[1])-1,1); return d.toLocaleDateString("en-US",{month:"short"})+" ’"+String(d.getFullYear()).slice(2);}
+function save(){if(demoMode){$("saved-note").textContent="Demo mode — not saved."; return;} try{localStorage.setItem(KEY,JSON.stringify(state)); $("saved-note").textContent="Saved locally · "+new Date().toLocaleTimeString();}catch(e){}}
+function upcoming(){return state.events.filter(function(e){return !e.paid && daysTo(e.date)>0;}).sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:0);});}
+function projection(){var run=Number(state.balance)||0; var out=[]; upcoming().forEach(function(e){run=run-e.out+e.in; out.push({e:e,balance:run});}); return out;}
+function chartPoints(){var run=Number(state.balance)||0; var pts=[{date:state.asof,balance:run}]; var byDate={}; upcoming().forEach(function(e){if(!byDate[e.date]) byDate[e.date]={out:0,in:0}; byDate[e.date].out+=e.out; byDate[e.date].in+=e.in;}); Object.keys(byDate).sort().forEach(function(d){run=run-byDate[d].out+byDate[d].in; pts.push({date:d,balance:run});}); return pts;}
+function lineSvg(pts){
+  var W=760,H=280,PL=52,PR=16,PT=18,PB=30;
+  if(pts.length===0) return "<p class='muted'>No upcoming moves to chart.</p>";
+  var max=Math.max.apply(null,pts.map(function(p){return p.balance;})); var min=Math.min(0,Math.min.apply(null,pts.map(function(p){return p.balance;})));
+  max=max*1.06; if(max===min) max=min+1000; var span=max-min;
+  var total=Math.max(1,Math.round((parseDate(pts[pts.length-1].date)-parseDate(pts[0].date))/86400000));
+  function xy(p){var x=PL+((parseDate(p.date)-parseDate(pts[0].date))/86400000/total)*(W-PL-PR); var y=PT+(1-(p.balance-min)/span)*(H-PT-PB); return [x,y];}
+  var grid=""; [0,1000,2000,3000,4000,5000,10000,15000,20000].forEach(function(v){if(v<min||v>max) return; var y=PT+(1-(v-min)/span)*(H-PT-PB); grid+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" style="stroke:var(--line)"/><text x="'+(PL-6)+'" y="'+(y+4).toFixed(1)+'" style="fill:var(--muted)" font-size="11" text-anchor="end">$'+v.toLocaleString()+'</text>';});
+  var poly=pts.map(function(p){var q=xy(p); return q[0].toFixed(1)+","+q[1].toFixed(1);}).join(" ");
+  var minPt=pts.reduce(function(a,b){return b.balance<a.balance?b:a;},pts[0]);
+  var circles=pts.map(function(p){var q=xy(p); var isMin=p===minPt; return '<circle cx="'+q[0].toFixed(1)+'" cy="'+q[1].toFixed(1)+'" r="'+(isMin?5:3.5)+'" style="fill:var(--bg);stroke:'+(isMin?"var(--danger)":"var(--accent)")+'" stroke-width="2"><title>'+p.date+' · '+money(p.balance)+'</title></circle>';}).join("");
+  var area=''; if(pts.length>1){var _bot=PT+(H-PT-PB); var _pts=pts.map(function(p){return xy(p);}); area='<path d="M '+_pts.map(function(q){return q[0].toFixed(1)+' '+q[1].toFixed(1);}).join(' L ')+' L '+_pts[_pts.length-1][0].toFixed(1)+' '+_bot+' L '+_pts[0][0].toFixed(1)+' '+_bot+' Z" fill="var(--accent)" opacity="0.10" stroke="none"/>';} return '<svg viewBox="0 0 760 280" width="100%" role="img">'+grid+area+'<polyline points="'+poly+'" fill="none" style="stroke:var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>'+circles+'</svg>';
+}
+function monthlyData(){var map={}; upcoming().forEach(function(e){var k=e.date.slice(0,7); if(!map[k]) map[k]={out:0,in:0}; map[k].out+=e.out; map[k].in+=e.in;}); return Object.keys(map).sort().map(function(k){return {key:k,out:map[k].out,in:map[k].in};});}
+function monthlyHtml(){
+  var data=monthlyData(); if(!data.length) return "<p class='muted'>No upcoming moves.</p>";
+  var mmax=Math.max.apply(null,data.map(function(d){return Math.max(d.out,d.in);})); if(!mmax) mmax=1000; var html="";
+  data.forEach(function(d){
+    html+='<div class="month-row"><div class="month-label"><strong>'+fmtMonth(d.key)+'</strong><span class="muted">Net '+money(d.in-d.out)+'</span></div>';
+    html+='<div class="hbar"><span class="hbar-track"><i class="out" style="width:'+(d.out/mmax*100).toFixed(1)+'%"></i></span><span>Out '+money(d.out)+'</span></div>';
+    html+='<div class="hbar"><span class="hbar-track"><i class="inn" style="width:'+(d.in/mmax*100).toFixed(1)+'%"></i></span><span>In '+money(d.in)+'</span></div></div>';
+  }); return html;
+}
+function largestHtml(){
+  var largest=upcoming().filter(function(e){return e.out>0;}).sort(function(a,b){return b.out-a.out;}).slice(0,5);
+  if(!largest.length) return "<p class='muted'>No upcoming bills.</p>";
+  var mmax=largest[0].out; var html="";
+  largest.forEach(function(e){html+='<div class="month-row"><div class="month-label"><strong>'+fmtDate(e.date)+' · '+esc(e.label)+'</strong></div><div class="hbar"><span class="hbar-track"><i class="out" style="width:'+(e.out/mmax*100).toFixed(1)+'%"></i></span><span>'+money(e.out)+'</span></div></div>';});
+  return html;
+}
+function renderHero(){
+  $("hero-balance").textContent=money(Number(state.balance)||0);
+  $("hero-asof-label").textContent=parseDate(state.asof).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}).toUpperCase();
+  var up=upcoming(); var nextIn=up.find(function(e){return e.in>0;}); var nextOut=up.find(function(e){return e.out>0;});
+  $("next-in").textContent=nextIn?fmtDate(nextIn.date)+" · "+money(nextIn.in)+" · in "+daysTo(nextIn.date)+" days":"—";
+  $("next-out").textContent=nextOut?("Next bill: "+fmtDate(nextOut.date)+" · "+money(nextOut.out)+" out"):"No upcoming bill";
+  var proj=projection(); var low=proj.length?proj.reduce(function(a,b){return b.balance<a.balance?b:a;},proj[0]):null;
+  $("tightest").textContent=low?fmtDate(low.e.date)+" · "+money(low.balance):"—";
+  if(low){$("warning-box").innerHTML="⚠️ <b>Tightest point:</b> "+fmtDate(low.e.date)+" leaves "+money(low.balance)+" after "+esc(low.e.label)+" ("+money(low.e.out)+" out"+(low.e.in?", "+money(low.e.in)+" in":"")+")."; $("warning-box").style.display="block";} else {$("warning-box").style.display="none";}
+}
+function renderUpcoming(){
+  var proj=projection(); var html=""; var shown=0;
+  proj.forEach(function(item){
+    var e=item.e; var d=daysTo(e.date);
+    if(rangeFilter!=="all" && d>parseInt(rangeFilter,10)) return;
+    if(typeFilter==="out" && !(e.out>0)) return;
+    if(typeFilter==="in" && !(e.in>0)) return;
+    if(searchText && e.label.toLowerCase().indexOf(searchText)===-1) return;
+    shown++; var dot=d<=7?"🔴":d<=30?"🟡":"⚪";
+    var mclass=(e.out&&e.in)?'move-both':(e.out?'move-out':'move-in'); html+="<article class='move "+mclass+"'><div class='move-head'><strong>"+fmtDate(e.date)+" · "+esc(e.label)+"</strong><span class='muted'>"+dot+" "+d+" days out · "+e.date+"</span></div>";
+    html+="<div class='move-nums'><span>Out <b class='"+(e.out?"red":"")+"'>"+(e.out?money(e.out):"—")+"</b></span><span>In <b class='"+(e.in?"green":"")+"'>"+(e.in?money(e.in):"—")+"</b></span><span>After <b>"+money(item.balance)+"</b></span></div>";
+    html+="<div class='move-actions'><button data-edit='"+e.id+"'>Edit</button><button data-paid='"+e.id+"'>✓ Paid</button><button data-del='"+e.id+"'>Delete</button></div></article>";
+  });
+  $("upcoming-body").innerHTML=html||"<p class='muted'>No moves match this filter.</p>";
+  $("upcoming-count").textContent="("+shown+" shown · "+proj.length+" upcoming total)";
+  document.querySelectorAll("[data-edit]").forEach(function(b){b.onclick=function(){startEdit(b.getAttribute("data-edit"));};});
+  document.querySelectorAll("[data-paid]").forEach(function(b){b.onclick=function(){var ev=state.events.find(function(x){return x.id===b.getAttribute("data-paid");}); if(ev){ev.paid=true; save(); renderAll();}};});
+  document.querySelectorAll("[data-del]").forEach(function(b){b.onclick=function(){deleteEvent(b.getAttribute("data-del"));};});
+}
+function renderPaid(){
+  var paid=state.events.filter(function(e){return e.paid;}).sort(function(a,b){return a.date<b.date?-1:1;});
+  if(!paid.length){$("paid-body").innerHTML="Nothing marked paid yet."; return;}
+  var html="";
+  paid.forEach(function(e){var mclass=(e.out&&e.in)?'move-both':(e.out?'move-out':'move-in'); html+="<article class='move "+mclass+"'><div class='move-head'><strong>"+fmtDate(e.date)+" · "+esc(e.label)+"</strong></div><div class='move-nums'><span>Out "+(e.out?money(e.out):"—")+"</span><span>In "+(e.in?money(e.in):"—")+"</span></div><div class='move-actions'><button data-unpay='"+e.id+"'>Undo paid</button></div></article>";});
+  $("paid-body").innerHTML=html;
+  document.querySelectorAll("[data-unpay]").forEach(function(b){b.onclick=function(){var ev=state.events.find(function(x){return x.id===b.getAttribute("data-unpay");}); if(ev){ev.paid=false; save(); renderAll();}};});
+}
+function renderCharts(){
+  var pts=chartPoints();
+  $("forecast-wrap").innerHTML=lineSvg(pts);
+  $("zoom-wrap").innerHTML=lineSvg(pts.filter(function(p){return p.date<="2026-12-11";}));
+  $("monthly-wrap").innerHTML=monthlyHtml();
+  $("largest-wrap").innerHTML=largestHtml();
+}
+function renderBudget(){
+  var inc=0, exp=0; state.budget.forEach(function(b){if(b.amount>0) inc+=b.amount; else exp+= -b.amount;});
+  var surplus=inc-exp;
+  $("budget-totals").innerHTML="Income <b class='green'>"+money(inc)+"/mo</b> · Out <b>"+money(exp)+"/mo</b> · Surplus <b>"+money(surplus)+"/mo</b> ("+money(surplus/4)+"/wk, "+money(surplus/30)+"/day approx).";
+  var html="";
+  state.budget.forEach(function(b){
+    var pct=inc?Math.abs(b.amount)/inc*100:0;
+    html+="<div class='budget-row'><div class='month-label'><strong>"+esc(b.name)+"</strong><span class='muted'>"+pct.toFixed(1)+"% of income</span></div>";
+    html+="<div class='hbar'><span class='hbar-track'><i class='"+(b.amount>0?"inn":"out")+"' style='width:"+pct.toFixed(1)+"%'></i></span><span>"+money(b.amount)+"/mo</span></div>";
+    html+="<div class='budget-edit' style='margin-top:10px'><input data-bname='"+b.id+"' value='"+esc(b.name)+"'><input class='num' type='number' data-bamt='"+b.id+"' value='"+b.amount+"' step='1'><button data-bdel='"+b.id+"'>×</button></div></div>";
+  });
+  $("budget-body").innerHTML=html||"<p class='muted'>No budget lines.</p>";
+  document.querySelectorAll("[data-bname]").forEach(function(inp){inp.onchange=function(){var b=state.budget.find(function(x){return x.id===inp.getAttribute("data-bname");}); if(b){b.name=inp.value.trim()||b.name; save(); renderBudget();};};});
+  document.querySelectorAll("[data-bamt]").forEach(function(inp){inp.onchange=function(){var b=state.budget.find(function(x){return x.id===inp.getAttribute("data-bamt");}); if(b){b.amount=Number(inp.value)||0; save(); renderBudget();};};});
+  document.querySelectorAll("[data-bdel]").forEach(function(btn){btn.onclick=function(){state.budget=state.budget.filter(function(x){return x.id!==btn.getAttribute("data-bdel");}); save(); renderAll();};});
+}
+function renderAll(){renderHero(); renderUpcoming(); renderPaid(); renderCharts(); renderBudget();}
+function clearEditForm(){
+  editingId=null; $("edit-name").value=""; $("edit-date").value="2026-11-05"; $("edit-out").value=""; $("edit-in").value="";
+  $("edit-title").textContent="Adding a new move. In a browser, tap Edit on any timeline move to load it here.";
+  $("edit-cancel").style.display="none"; $("edit-delete").style.display="none"; $("edit-note").textContent="";
+}
+function startEdit(id){
+  var e=state.events.find(function(x){return x.id===id;}); if(!e) return;
+  editingId=id; $("edit-name").value=e.label; $("edit-date").value=e.date; $("edit-out").value=e.out||""; $("edit-in").value=e.in||"";
+  $("edit-title").textContent="Editing: "+e.label+" ("+e.date+")";
+  $("edit-cancel").style.display="inline-block"; $("edit-delete").style.display="inline-block"; $("edit-note").textContent="";
+  document.getElementById("edit").scrollIntoView();
+}
+function deleteEvent(id){
+  if(!confirm("Delete this move?")) return;
+  state.events=state.events.filter(function(x){return x.id!==id;});
+  if(editingId===id) clearEditForm();
+  save(); renderAll();
+}
+$("asof").oninput=function(){state.asof=$("asof").value; save(); renderAll();};
+$("balance").oninput=function(){state.balance=Number($("balance").value)||0; save(); renderAll();};
+$("rollBtn").onclick=function(){
+  var _d=new Date(); var todayStr=_d.getFullYear()+"-"+String(_d.getMonth()+1).padStart(2,"0")+"-"+String(_d.getDate()).padStart(2,"0");
+  if(todayStr<=state.asof){$("saved-note").textContent="Already at or past today ("+state.asof+")."; return;}
+  var run=Number(state.balance)||0;
+  state.events.filter(function(e){return !e.paid && e.date>state.asof && e.date<=todayStr;}).sort(function(a,b){return a.date<b.date?-1:1;}).forEach(function(e){run=run-e.out+e.in;});
+  state.asof=todayStr; state.balance=run; $("asof").value=todayStr; $("balance").value=run; save(); renderAll();
+};
+$("resetBtn").onclick=function(){if(demoMode){alert("Exit demo first to reset your real data."); return;} if(!confirm("Reset everything to the Excel snapshot? Your browser edits will be lost.")) return; localStorage.removeItem(KEY); state=deepCopy(SNAPSHOT); clearEditForm(); $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll();};
+$("exportBtn").onclick=function(){var blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}); var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="bill-tracker-backup.json"; a.click(); URL.revokeObjectURL(a.href);};
+$("import-file").onchange=function(ev){
+  var f=ev.target.files && ev.target.files[0]; if(!f) return;
+  var reader=new FileReader(); reader.onload=function(){
+    try{
+      var data=JSON.parse(reader.result);
+      if(!data || !Array.isArray(data.events)) throw new Error("No events array");
+      state.asof=data.asof||state.asof; state.balance=typeof data.balance==="number"?data.balance:state.balance;
+      state.events=data.events.map(function(e,i){return {id:String(e.id||("imp-"+i)),date:e.date,label:String(e.label||"Move"),out:Number(e.out)||0,in:Number(e.in)||0,paid:!!e.paid};});
+      if(Array.isArray(data.budget)) state.budget=data.budget.map(function(b,i){return {id:String(b.id||("bimp-"+i)),name:String(b.name||"Line"),amount:Number(b.amount)||0};});
+      clearEditForm(); $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll(); $("saved-note").textContent="Imported backup.";
+    }catch(err){ alert("Could not import that file: "+err.message); }
+  }; reader.readAsText(f);
+};
+$("range-filter").onchange=function(){rangeFilter=$("range-filter").value; renderUpcoming();};
+$("type-filter").onchange=function(){typeFilter=$("type-filter").value; renderUpcoming();};
+$("search").oninput=function(){searchText=$("search").value.trim().toLowerCase(); renderUpcoming();};
+$("edit-save").onclick=function(){
+  var name=$("edit-name").value.trim(); var date=$("edit-date").value; var out=Number($("edit-out").value)||0; var inn=Number($("edit-in").value)||0;
+  if(!name){$("edit-note").textContent="Add a name first."; return;}
+  if(!date){$("edit-note").textContent="Pick a date first."; return;}
+  if(out<0||inn<0){$("edit-note").textContent="Amounts cannot be negative."; return;}
+  if(out===0&&inn===0){$("edit-note").textContent="Add an out or in amount."; return;}
+  if(editingId){var e=state.events.find(function(x){return x.id===editingId;}); if(e){e.label=name; e.date=date; e.out=out; e.in=inn;}}
+  else {state.events.push({id:"m-"+Date.now(),date:date,label:name,out:out,in:inn,paid:false});}
+  var wasEditing=!!editingId; save(); renderAll(); clearEditForm(); $("edit-note").textContent=wasEditing?"Saved. Form cleared for a new move.":"Added. It now updates every total and chart.";
+};
+$("edit-cancel").onclick=function(){clearEditForm();};
+$("edit-delete").onclick=function(){if(editingId) deleteEvent(editingId);};
+$("budget-add-btn").onclick=function(){
+  var name=$("budget-add-name").value.trim(); var amt=Number($("budget-add-amount").value);
+  if(!name||$("budget-add-amount").value===""||isNaN(amt)){alert("Add a budget line name and amount."); return;}
+  state.budget.push({id:"b-"+Date.now(),name:name,amount:amt}); $("budget-add-name").value=""; $("budget-add-amount").value=""; save(); renderAll();
+};
+function applyTheme(theme){document.documentElement.setAttribute("data-theme",theme); try{localStorage.setItem("budget-bill-tracker-theme",theme);}catch(e){} var _b=$("themeBtn"); if(_b) _b.textContent=theme==="dark"?"☀️ Light mode":"🌙 Dark mode"; var _m=document.querySelector('meta[name="theme-color"]'); if(_m) _m.setAttribute("content",theme==="dark"?"#0B0D10":"#F7F3EB");}
+var _savedTheme="light"; try{_savedTheme=localStorage.getItem("budget-bill-tracker-theme")||"light";}catch(e){} if(_savedTheme!=="dark"&&_savedTheme!=="light") _savedTheme="light"; applyTheme(_savedTheme);
+$("themeBtn").onclick=function(){var cur=document.documentElement.getAttribute("data-theme")||"light"; applyTheme(cur==="dark"?"light":"dark");};
+if(document.addEventListener){document.addEventListener("gesturestart",function(e){e.preventDefault();});}
+$("demoBtn").onclick=function(){
+  if(demoMode) return;
+  personalState=deepCopy(state); state=deepCopy(DEMO); demoMode=true;
+  $("demo-banner").style.display="block"; $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll();
+};
+$("exitDemoBtn").onclick=function(){
+  if(!demoMode) return;
+  state=personalState||deepCopy(SNAPSHOT); personalState=null; demoMode=false;
+  $("demo-banner").style.display="none"; $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll();
+};
+$("asof").value=state.asof; $("balance").value=state.balance; renderAll();
+</script>
+</body></html>
