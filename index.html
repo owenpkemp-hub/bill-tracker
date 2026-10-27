@@ -46,10 +46,11 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-wei
 .month-label{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .hbar{display:flex;gap:10px;align-items:center;margin-top:6px} .hbar-track{flex:1;height:12px;background:var(--track);border-radius:99px;overflow:hidden} .hbar-track i{display:block;height:100%} .hbar-track i.out{background:var(--danger)} .hbar-track i.inn{background:var(--accent)}
 .budget-row{border-top:1px solid var(--line);padding:12px 0} .budget-row:last-child{border-bottom:1px solid var(--line)}
+.drop-zone{border:2px dashed var(--line);border-radius:12px;padding:20px;text-align:center;min-height:64px;font-size:16px;cursor:pointer} .drop-zone.drag-over{border-color:var(--accent)}
 .ocr-row{display:grid;grid-template-columns:150px 1fr 110px 110px 44px;gap:8px;align-items:center;margin-bottom:8px} @media(max-width:560px){.ocr-row{grid-template-columns:1fr 1fr}.ocr-row input[data-ocr-date]{grid-column:1/-1}.ocr-row input[data-ocr-label]{grid-column:1/-1}}
 .budget-edit{display:grid;grid-template-columns:1fr 150px 44px;gap:8px;align-items:center} @media(max-width:560px){.budget-edit{grid-template-columns:1fr 44px}.budget-edit input[data-bname]{grid-column:1/-1}}
 </style></head><body><div class="wrap">
-<nav><a href="#overview">Overview</a><a href="#controls">Controls</a><a href="#screenshot">Screenshot</a><a href="#edit">Add / Edit</a><a href="#timeline">Timeline</a><a href="#charts">Charts</a><a href="#budget">Budget</a><button id="themeBtn" style="margin-left:auto">🌙 Dark mode</button></nav>
+<nav><a href="#overview">Overview</a><a href="#controls">Controls</a><a href="#screenshot">Import</a><a href="#edit">Add / Edit</a><a href="#timeline">Timeline</a><a href="#charts">Charts</a><a href="#budget">Budget</a><button id="themeBtn" style="margin-left:auto">🌙 Dark mode</button></nav>
 <div id="demo-banner" style="display:none;background:var(--banner-bg);border:1px solid var(--banner-border);border-radius:8px;padding:12px;margin:16px 0"><b>Demo mode — fictional data.</b> Demo edits are not saved. <button id="exitDemoBtn">Exit demo</button></div>
 <div id="js-banner"><b>Snapshot view</b> — blank to start, shown even if scripts are blocked. Add your first bill, or load demo data to see how it works. Open in a real browser to edit, mark paid, and redraw the charts. In preview, buttons and inputs will not run — that is the viewer, not a broken file.</div>
 <p class="muted">Demo-friendly · Start blank or load demo data · Your data stays in your browser only</p>
@@ -75,25 +76,25 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-wei
 <p class="muted small">Typing in these two fields updates the overview and charts immediately. If you move as-of by hand, update the balance to your actual balance on that date.</p>
 <p><button id="rollBtn">Roll forward to today</button> <button id="demoBtn">Load demo data</button></p>
 <p><button id="resetBtn">Reset to blank start</button> <button id="exportBtn">Export backup (JSON)</button></p>
-<div class="field"><label>Import a backup</label><input type="file" id="import-file" accept=".json,application/json"></div>
 <div class="field"><label>Show</label><select id="range-filter"><option value="all">All upcoming</option><option value="7">Next 7 days</option><option value="30">Next 30 days</option></select></div>
 <div class="field"><label>Move type</label><select id="type-filter"><option value="all">All moves</option><option value="out">Bills out only</option><option value="in">Money in only</option></select></div>
 <div class="field"><label>Search bills</label><input id="search" placeholder="Search bills…"></div>
 </section>
 
 <section id="screenshot">
-<h2>Update from a screenshot — browser only</h2>
-<p class="muted small">Two routes, honestly labeled. <b>Route A — in-app OCR:</b> pick a screenshot of your Excel Tracker, tap Try OCR, review the draft rows, fix anything, then Apply. <b>Route B — send to your AI assistant (more accurate):</b> copy the message below, send it with your screenshot in chat, and have it rebuild the snapshot from it.</p>
-<div class="field"><label>Screenshot image</label><input type="file" id="shot-file" accept="image/*"></div>
-<img id="shot-preview" style="display:none;max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;margin-bottom:12px" alt="Screenshot preview">
-<p><button class="primary" id="ocr-btn">Try in-app OCR</button> <button id="ocr-clear">Clear screenshot</button> <button id="copy-muse-btn">Copy message for your AI assistant</button></p>
-<p class="muted small" id="ocr-status">No screenshot loaded yet. OCR loads Tesseract.js from a CDN only when you tap Try OCR — the library downloads to your browser, the image itself never leaves your device for OCR. If you prefer no third-party download at all, use Route B.</p>
+<h2>Import — screenshot or Excel, one place</h2>
+<p class="muted small">Drop one file here, or tap to choose: a screenshot of your Excel Tracker, the Excel file itself (.xlsx / .xls), a .csv export, or a JSON backup from this app. The app reads it, shows you draft rows to fix, and only applies when you tap Apply. The file itself never leaves your device — OCR and Excel reading libraries download from a CDN only when you tap Read file.</p>
+<div id="drop-zone" class="drop-zone" tabindex="0" role="button">Drop a screenshot or Excel file here, or tap to choose one</div>
+<div class="field"><label>Choose a file — screenshot, Excel, CSV, or JSON backup</label><input type="file" id="import-file" accept="image/*,.xlsx,.xls,.csv,.json"></div>
+<img id="import-preview" style="display:none;max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;margin-bottom:12px" alt="File preview">
+<p><button class="primary" id="read-btn">Read file</button> <button id="import-clear">Clear file</button> <button id="copy-muse-btn">Copy message for your AI assistant</button></p>
+<p class="muted small" id="import-status">No file loaded yet. For a screenshot, in-app OCR is a draft — always check the review table. An Excel file is more accurate than a screenshot, because it reads the numbers directly instead of guessing them from pixels. If tapping Choose file does nothing, open this page in Safari (not the in-app preview) and try again.</p>
 <div class="field"><label>How to apply reviewed rows</label><select id="ocr-mode"><option value="merge">Merge — skip exact duplicates already in the tracker</option><option value="replace">Replace all upcoming moves with reviewed rows</option></select></div>
 <div id="ocr-review"></div>
 <p><button class="primary" id="ocr-apply" style="display:none">Apply reviewed rows</button> <span class="muted small" id="ocr-note"></span></p>
-<div class="field"><label>Or paste copied Excel rows (fallback if OCR misreads)</label><textarea id="paste-text" rows="4" placeholder="2026-11-12  2400  0  Credit Card"></textarea></div>
+<div class="field"><label>Or paste copied Excel rows (fallback)</label><textarea id="paste-text" rows="4" placeholder="2026-11-12  2400  0  Credit Card"></textarea></div>
 <p><button id="paste-btn">Parse pasted rows</button></p>
-<p class="muted small">OCR is a draft, not a promise: small Excel text, gridlines, and $ signs misread often. Always check the review table — especially dates and out vs in — before you tap Apply. Applying does not write back to Excel; it updates this app's browser data only. OCR works best on Excel Tracker screenshots with YYYY-MM-DD dates; app timeline screenshots with "Nov 26" only are guessed from your as-of year and need extra checking.</p>
+<p class="muted small">Applying does not write back to Excel; it updates this app's browser data only. Unlabeled rows stay unlabeled — the app never invents a bill name.</p>
 </section>
 
 <section id="edit">
@@ -339,6 +340,56 @@ function loadTesseract(){
     var s=document.createElement("script"); s.src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"; s.onload=function(){resolve(window.Tesseract);}; s.onerror=function(){reject(new Error("Could not load Tesseract.js — check internet and try again."));}; document.head.appendChild(s);
   });
 }
+function detectFileKind(f){
+  var name=(f && f.name||"").toLowerCase();
+  if(/\.xlsx?$/.test(name)) return "excel";
+  if(/\.csv$/.test(name)||/\.txt$/.test(name)) return "csv";
+  if(/\.json$/.test(name)) return "json";
+  if((f && f.type && f.type.indexOf("image/")===0) || /\.(png|jpe?g|webp|gif|heic|heif)$/.test(name)) return "image";
+  return "unknown";
+}
+function formatExcelDate(v){
+  if(v instanceof Date){return v.getFullYear()+"-"+String(v.getMonth()+1).padStart(2,"0")+"-"+String(v.getDate()).padStart(2,"0");}
+  if(typeof v==="number"){
+    if(v<40000||v>80000) return null;
+    try{ if(window.XLSX && XLSX.SSF && XLSX.SSF.parse_date_code){var pc=XLSX.SSF.parse_date_code(v); if(pc && pc.y) return pc.y+"-"+String(pc.m).padStart(2,"0")+"-"+String(pc.d).padStart(2,"0");} }catch(e){}
+    var d=new Date(Math.round((v-25569)*86400*1000)); return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");
+  }
+  if(typeof v==="string"){
+    var s=v.trim(); var m=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/); if(m) return m[1]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[3]).padStart(2,"0");
+    var m2=s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m2) return m2[3]+"-"+String(m2[1]).padStart(2,"0")+"-"+String(m2[2]).padStart(2,"0");
+    var months={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+    var mm=s.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{1,2})/i);
+    if(mm){var mo=months[mm[1].toLowerCase().slice(0,3)]; var yr=parseInt((state.asof||"2026-10-27").slice(0,4),10); var asofMo=parseInt((state.asof||"2026-10-27").slice(5,7),10); if(mo<asofMo) yr+=1; return yr+"-"+String(mo).padStart(2,"0")+"-"+String(mm[2]).padStart(2,"0");}
+  }
+  return null;
+}
+function parseExcelRows(aoa){
+  var rows=[];
+  (aoa||[]).forEach(function(row){
+    if(!row) return; var di=-1, date=null;
+    for(var i=0;i<row.length;i++){var v=row[i]; if(v===null||v===undefined||v==="") continue; var d=formatExcelDate(v); if(d){di=i; date=d; break;}}
+    if(di<0) return;
+    var nums=[]; var label="";
+    row.slice(di+1).forEach(function(c){
+      if(typeof c==="number") nums.push(c);
+      else if(typeof c==="string" && c.trim()!==""){label=label?label+" "+c.trim():c.trim();}
+    });
+    var out=0, inn=0;
+    if(nums.length>=3){out=nums[1]; inn=nums[2];}
+    else if(nums.length>=1){out=nums[0]; inn=0;}
+    if(out===0 && inn===0) return;
+    if(!label) label=out?"Outflow":"Income";
+    rows.push({date:date,label:label,out:Math.abs(out),in:Math.abs(inn)});
+  });
+  var seen={}; return rows.filter(function(r){var k=r.date+"|"+r.label+"|"+r.out+"|"+r.in; if(seen[k]) return false; seen[k]=true; return true;});
+}
+function loadSheetJS(){
+  return new Promise(function(resolve,reject){
+    if(window.XLSX) return resolve(window.XLSX);
+    var s=document.createElement("script"); s.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"; s.onload=function(){resolve(window.XLSX);}; s.onerror=function(){reject(new Error("Could not load the Excel reader — check internet and try again."));}; document.head.appendChild(s);
+  });
+}
 function renderAll(){renderHero(); renderUpcoming(); renderPaid(); renderCharts(); renderBudget();}
 function clearEditForm(){
   editingId=null; $("edit-name").value=""; $("edit-date").value="2026-11-05"; $("edit-out").value=""; $("edit-in").value="";
@@ -369,95 +420,77 @@ $("rollBtn").onclick=function(){
 };
 $("resetBtn").onclick=function(){if(demoMode){alert("Exit demo first to reset your real data."); return;} if(!confirm("Reset everything to the blank start? Your browser edits will be lost.")) return; localStorage.removeItem(KEY); state=deepCopy(SNAPSHOT); clearEditForm(); $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll();};
 $("exportBtn").onclick=function(){var blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}); var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="bill-tracker-backup.json"; a.click(); URL.revokeObjectURL(a.href);};
-$("import-file").onchange=function(ev){
-  var f=ev.target.files && ev.target.files[0]; if(!f) return;
-  var reader=new FileReader(); reader.onload=function(){
+let currentImportFile=null;
+function setImportFile(f){
+  currentImportFile=f||null; if(!f) return;
+  var img=$("import-preview");
+  if(f.type && f.type.indexOf("image/")===0){img.src=URL.createObjectURL(f); img.style.display="block";}
+  else {img.style.display="none"; img.src="";}
+  $("import-status").textContent="Loaded '"+f.name+"'. Tap Read file.";
+}
+$("import-file").onchange=function(){
+  var f=$("import-file").files && $("import-file").files[0]; if(f) setImportFile(f);
+};
+$("drop-zone").onclick=function(){ $("import-file").click(); };
+$("drop-zone").onkeydown=function(e){ if(e.key==="Enter"||e.key===" "){e.preventDefault(); $("import-file").click();} };
+$("drop-zone").ondragover=function(e){e.preventDefault(); $("drop-zone").classList.add("drag-over");};
+$("drop-zone").ondragleave=function(){ $("drop-zone").classList.remove("drag-over"); };
+$("drop-zone").ondrop=function(e){e.preventDefault(); $("drop-zone").classList.remove("drag-over"); var f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if(f) setImportFile(f);};
+$("import-clear").onclick=function(){
+  $("import-file").value=""; currentImportFile=null; $("import-preview").style.display="none"; $("import-preview").src=""; ocrRows=[]; renderOCRReview();
+  $("import-status").textContent="File cleared.";
+};
+$("read-btn").onclick=async function(){
+  var f=currentImportFile || ($("import-file").files && $("import-file").files[0]);
+  if(!f){$("import-status").textContent="Choose a file first — screenshot, Excel, CSV, or JSON backup."; return;}
+  var kind=detectFileKind(f);
+  if(kind==="unknown"){$("import-status").textContent="That file type is not supported yet — use a screenshot, .xlsx/.xls, .csv, or a JSON backup from this app."; return;}
+  if(kind==="json"){
     try{
-      var data=JSON.parse(reader.result);
+      var txt=await f.text(); var data=JSON.parse(txt);
       if(!data || !Array.isArray(data.events)) throw new Error("No events array");
+      if(!confirm("Restore this backup? Your current browser edits will be replaced.")) return;
       state.asof=data.asof||state.asof; state.balance=typeof data.balance==="number"?data.balance:state.balance;
       state.events=data.events.map(function(e,i){return {id:String(e.id||("imp-"+i)),date:e.date,label:String(e.label||"Move"),out:Number(e.out)||0,in:Number(e.in)||0,paid:!!e.paid};});
       if(Array.isArray(data.budget)) state.budget=data.budget.map(function(b,i){return {id:String(b.id||("bimp-"+i)),name:String(b.name||"Line"),amount:Number(b.amount)||0};});
-      clearEditForm(); $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll(); $("saved-note").textContent="Imported backup.";
-    }catch(err){ alert("Could not import that file: "+err.message); }
-  }; reader.readAsText(f);
-};
-$("range-filter").onchange=function(){rangeFilter=$("range-filter").value; renderUpcoming();};
-$("type-filter").onchange=function(){typeFilter=$("type-filter").value; renderUpcoming();};
-$("search").oninput=function(){searchText=$("search").value.trim().toLowerCase(); renderUpcoming();};
-$("edit-save").onclick=function(){
-  var name=$("edit-name").value.trim(); var date=$("edit-date").value; var out=Number($("edit-out").value)||0; var inn=Number($("edit-in").value)||0;
-  if(!name){$("edit-note").textContent="Add a name first."; return;}
-  if(!date){$("edit-note").textContent="Pick a date first."; return;}
-  if(out<0||inn<0){$("edit-note").textContent="Amounts cannot be negative."; return;}
-  if(out===0&&inn===0){$("edit-note").textContent="Add an out or in amount."; return;}
-  if(editingId){var e=state.events.find(function(x){return x.id===editingId;}); if(e){e.label=name; e.date=date; e.out=out; e.in=inn;}}
-  else {state.events.push({id:"m-"+Date.now(),date:date,label:name,out:out,in:inn,paid:false});}
-  var wasEditing=!!editingId; save(); renderAll(); clearEditForm(); $("edit-note").textContent=wasEditing?"Saved. Form cleared for a new move.":"Added. It now updates every total and chart.";
-};
-$("edit-cancel").onclick=function(){clearEditForm();};
-$("edit-delete").onclick=function(){if(editingId) deleteEvent(editingId);};
-$("budget-add-btn").onclick=function(){
-  var name=$("budget-add-name").value.trim(); var amt=Number($("budget-add-amount").value);
-  if(!name||$("budget-add-amount").value===""||isNaN(amt)){alert("Add a budget line name and amount."); return;}
-  state.budget.push({id:"b-"+Date.now(),name:name,amount:amt}); $("budget-add-name").value=""; $("budget-add-amount").value=""; save(); renderAll();
-};
-function applyTheme(theme){document.documentElement.setAttribute("data-theme",theme); try{localStorage.setItem("budget-bill-tracker-theme",theme);}catch(e){} var _b=$("themeBtn"); if(_b) _b.textContent=theme==="dark"?"☀️ Light mode":"🌙 Dark mode"; var _m=document.querySelector('meta[name="theme-color"]'); if(_m) _m.setAttribute("content",theme==="dark"?"#0B0D10":"#F7F3EB");}
-var _savedTheme="light"; try{_savedTheme=localStorage.getItem("budget-bill-tracker-theme")||"light";}catch(e){} if(_savedTheme!=="dark"&&_savedTheme!=="light") _savedTheme="light"; applyTheme(_savedTheme);
-$("themeBtn").onclick=function(){var cur=document.documentElement.getAttribute("data-theme")||"light"; applyTheme(cur==="dark"?"light":"dark");};
-if(document.addEventListener){document.addEventListener("gesturestart",function(e){e.preventDefault();});}
-$("demoBtn").onclick=function(){
-  if(demoMode) return;
-  personalState=deepCopy(state); state=deepCopy(DEMO); demoMode=true;
-  $("demo-banner").style.display="block"; $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll();
-};
-$("exitDemoBtn").onclick=function(){
-  if(!demoMode) return;
-  state=personalState||deepCopy(SNAPSHOT); personalState=null; demoMode=false;
-  $("demo-banner").style.display="none"; $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll();
-};
-$("shot-file").onchange=function(){
-  var f=$("shot-file").files && $("shot-file").files[0]; if(!f) return;
-  var img=$("shot-preview"); img.src=URL.createObjectURL(f); img.style.display="block";
-  $("ocr-status").textContent="Screenshot loaded. Tap Try in-app OCR, or use the paste fallback below.";
-};
-$("ocr-clear").onclick=function(){
-  $("shot-file").value=""; $("shot-preview").style.display="none"; $("shot-preview").src=""; ocrRows=[]; renderOCRReview();
-  $("ocr-status").textContent="Screenshot cleared.";
-};
-$("ocr-btn").onclick=async function(){
-  var f=$("shot-file").files && $("shot-file").files[0];
-  if(!f){$("ocr-status").textContent="Pick a screenshot image first."; return;}
-  $("ocr-status").textContent="Loading OCR… (first time downloads the OCR library; your image stays on this device.)";
+      clearEditForm(); $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll(); $("import-status").textContent="Imported backup.";
+    }catch(err){$("import-status").textContent="Could not import that file: "+err.message;}
+    return;
+  }
+  if(kind==="csv"){
+    try{var ctext=await f.text(); ocrRows=parseOCRText(ctext); renderOCRReview(); $("import-status").textContent=ocrRows.length?("CSV read: "+ocrRows.length+" candidate row(s). Check every date, out, and in below before applying."):"No dated rows found in that CSV. Try the Excel file instead, or use the paste fallback below.";}
+    catch(err){$("import-status").textContent="CSV read failed: "+err.message;}
+    return;
+  }
+  if(kind==="excel"){
+    $("import-status").textContent="Loading Excel reader… (first time downloads the reader; your file stays on this device.)";
+    try{
+      var X=await loadSheetJS(); var buf=await f.arrayBuffer(); var wb=X.read(buf,{type:"array"});
+      var names=wb.SheetNames.slice(); if(names.indexOf("Tracker")>=0){names=["Tracker"].concat(names.filter(function(n){return n!=="Tracker";}));}
+      var found=null, foundSheet="";
+      for(var si=0;si<names.length;si++){var ws=wb.Sheets[names[si]]; if(!ws) continue; var aoa=X.utils.sheet_to_json(ws,{header:1,raw:true,defval:null}); var r=parseExcelRows(aoa); if(r.length){found=r; foundSheet=names[si]; break;}}
+      ocrRows=found||[]; renderOCRReview();
+      $("import-status").textContent=ocrRows.length?("Excel read from sheet '"+foundSheet+"': "+ocrRows.length+" candidate row(s). Check every date, out, and in below before applying."):"No dated rows found in that Excel file. Try the Tracker tab, or a screenshot of it.";
+    }catch(err){$("import-status").textContent="Excel read failed: "+err.message;}
+    return;
+  }
+  $("import-status").textContent="Loading OCR… (first time downloads the OCR library; your image stays on this device.)";
   try{
     var T=await loadTesseract();
-    $("ocr-status").textContent="Reading screenshot… this can take 20–60 seconds for a full Excel screen.";
+    $("import-status").textContent="Reading screenshot… this can take 20–60 seconds for a full Excel screen.";
     var result=await T.recognize(f, "eng");
     var text=(result && result.data && result.data.text) || "";
     ocrRows=parseOCRText(text); renderOCRReview();
-    $("ocr-status").textContent=ocrRows.length?("OCR found "+ocrRows.length+" candidate row(s). Check every date, out, and in below before applying — OCR misreads are common.") : ("OCR found no dated rows. Try a tighter crop of the Tracker rows with YYYY-MM-DD dates, or use the paste fallback below. Raw text starts: "+text.slice(0,200));
-  }catch(err){$("ocr-status").textContent="OCR failed: "+err.message;}
+    $("import-status").textContent=ocrRows.length?("OCR found "+ocrRows.length+" candidate row(s). Check every date, out, and in below before applying — OCR misreads are common.") : ("OCR found no dated rows. Try a tighter crop of the Tracker rows with YYYY-MM-DD dates, the Excel file itself, or the paste fallback below. Raw text starts: "+text.slice(0,200));
+  }catch(err){$("import-status").textContent="OCR failed: "+err.message;}
 };
 $("copy-muse-btn").onclick=function(){
   var msg="Please update my Bill Tracker from the screenshot I'm sending with this message. Extract the Tracker rows (date, out, in, label), keep my existing labels, don't invent bill names for unlabeled rows, and rebuild the app snapshot from the new numbers. Show me what changed before you finalize.";
-  if(navigator.clipboard && navigator.clipboard.writeText){navigator.clipboard.writeText(msg).then(function(){$("ocr-status").textContent="Message copied. Paste it in chat with your screenshot attached.";}).catch(function(){$("ocr-status").textContent=msg;});} else {$("ocr-status").textContent=msg;}
+  if(navigator.clipboard && navigator.clipboard.writeText){navigator.clipboard.writeText(msg).then(function(){$("import-status").textContent="Message copied. Paste it in chat with your screenshot attached.";}).catch(function(){$("import-status").textContent=msg;});} else {$("import-status").textContent=msg;}
 };
 $("paste-btn").onclick=function(){
   ocrRows=parseOCRText($("paste-text").value||""); renderOCRReview();
-  $("ocr-status").textContent=ocrRows.length?("Parsed "+ocrRows.length+" row(s) from pasted text. Review below before applying."):"No dated rows found in pasted text.";
-};
-$("ocr-apply").onclick=function(){
-  var rows=collectOCRReview();
-  if(!rows.length){$("ocr-note").textContent="No valid reviewed rows to apply."; return;}
-  if($("ocr-mode").value==="replace"){state.events=state.events.filter(function(e){return e.paid;});}
-  var added=0, skipped=0;
-  rows.forEach(function(r){
-    var exists=state.events.some(function(e){return e.date===r.date && e.label===r.label && e.out===r.out && e.in===r.in && !e.paid;});
-    if($("ocr-mode").value==="merge" && exists){skipped++; return;}
-    state.events.push({id:"ocr-"+Date.now()+"-"+added, date:r.date, label:r.label, out:r.out, in:r.in, paid:false}); added++;
-  });
-  save(); renderAll(); $("ocr-note").textContent="Applied "+added+" row(s)"+(skipped?" · skipped "+skipped+" duplicate(s)":"")+". Check the timeline — balances recalculated.";
-  ocrRows=[]; renderOCRReview();
+  $("import-status").textContent=ocrRows.length?("Parsed "+ocrRows.length+" row(s) from pasted text. Review below before applying."):"No dated rows found in pasted text.";
 };
 $("asof").value=state.asof; $("balance").value=state.balance; renderAll();
 </script>
