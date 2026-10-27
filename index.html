@@ -90,6 +90,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-wei
 <p><button class="primary" id="read-btn">Read file</button> <button id="import-clear">Clear file</button> <button id="copy-muse-btn">Copy message for your AI assistant</button></p>
 <p class="muted small" id="import-status">No file loaded yet. For a screenshot, in-app OCR is a draft — always check the review table. An Excel file is more accurate than a screenshot, because it reads the numbers directly instead of guessing them from pixels. If tapping Choose file does nothing, open this page in Safari (not the in-app preview) and try again.</p>
 <div class="field"><label>How to apply reviewed rows</label><select id="ocr-mode"><option value="merge">Merge — skip exact duplicates already in the tracker</option><option value="replace">Replace all upcoming moves with reviewed rows</option></select></div>
+<div id="excel-meta" style="display:none"><div class="field"><label>Checking balance from Excel — as-of date</label><input type="date" id="excel-asof"></div><div class="field"><label>Checking balance from Excel ($)</label><input type="number" id="excel-balance" step="1"></div><p class="muted small">Apply will also set your as-of date, balance, and budget from Excel. Clear these fields to keep your current as-of, balance, and budget instead.</p></div>
 <div id="ocr-review"></div>
 <p><button class="primary" id="ocr-apply" style="display:none">Apply reviewed rows</button> <span class="muted small" id="ocr-note"></span></p>
 <div class="field"><label>Or paste copied Excel rows (fallback)</label><textarea id="paste-text" rows="4" placeholder="2026-11-12  2400  0  Credit Card"></textarea></div>
@@ -288,7 +289,7 @@ function renderBudget(){
   document.querySelectorAll("[data-bamt]").forEach(function(inp){inp.onchange=function(){var b=state.budget.find(function(x){return x.id===inp.getAttribute("data-bamt");}); if(b){b.amount=Number(inp.value)||0; save(); renderBudget();};};});
   document.querySelectorAll("[data-bdel]").forEach(function(btn){btn.onclick=function(){state.budget=state.budget.filter(function(x){return x.id!==btn.getAttribute("data-bdel");}); save(); renderAll();};});
 }
-let ocrRows=[];
+let ocrRows=[]; let excelBudget=[]; let excelImportActive=false;
 function parseOCRText(text){
   var rows=[]; var lines=String(text||"").split(/\r?\n/);
   var months={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
@@ -370,19 +371,56 @@ function parseExcelRows(aoa){
     if(!row) return; var di=-1, date=null;
     for(var i=0;i<row.length;i++){var v=row[i]; if(v===null||v===undefined||v==="") continue; var d=formatExcelDate(v); if(d){di=i; date=d; break;}}
     if(di<0) return;
-    var nums=[]; var label="";
-    row.slice(di+1).forEach(function(c){
-      if(typeof c==="number") nums.push(c);
-      else if(typeof c==="string" && c.trim()!==""){label=label?label+" "+c.trim():c.trim();}
-    });
-    var out=0, inn=0;
-    if(nums.length>=3){out=nums[1]; inn=nums[2];}
-    else if(nums.length>=1){out=nums[0]; inn=0;}
+    var num=function(idx){var v=row[idx]; return (typeof v==="number" && !isNaN(v)) ? v : 0;};
+    var out=Math.abs(num(di+2)); var inn=Math.abs(num(di+3));
     if(out===0 && inn===0) return;
-    if(!label) label=out?"Outflow":"Income";
-    rows.push({date:date,label:label,out:Math.abs(out),in:Math.abs(inn)});
+    var note=row[di+5]; var label=(typeof note==="string" && note.trim()!=="") ? note.trim() : (out>0 && inn>0 ? "Outflow + income" : (out>0 ? "Outflow" : "Income"));
+    rows.push({date:date,label:label,out:out,in:inn});
   });
   var seen={}; return rows.filter(function(r){var k=r.date+"|"+r.label+"|"+r.out+"|"+r.in; if(seen[k]) return false; seen[k]=true; return true;});
+}
+function parseExcelSheet(aoa){
+  var all=[];
+  (aoa||[]).forEach(function(row){
+    if(!row) return; var di=-1, date=null;
+    for(var i=0;i<row.length;i++){var v=row[i]; if(v===null||v===undefined||v==="") continue; var d=formatExcelDate(v); if(d){di=i; date=d; break;}}
+    if(di<0) return;
+    var num=function(idx){var v=row[idx]; return (typeof v==="number" && !isNaN(v)) ? v : 0;};
+    var note=row[di+5]; var label=(typeof note==="string" && note.trim()!=="") ? note.trim() : "";
+    all.push({date:date,starting:num(di+1),out:num(di+2),in:num(di+3),end:num(di+4),label:label});
+  });
+  all.sort(function(a,b){return a.date<b.date?-1:1;});
+  var _d=new Date(); var todayStr=_d.getFullYear()+"-"+String(_d.getMonth()+1).padStart(2,"0")+"-"+String(_d.getDate()).padStart(2,"0");
+  var prior=all.filter(function(r){return r.date<=todayStr;});
+  var asof=null, balance=0;
+  if(prior.length){asof=prior[prior.length-1].date; balance=prior[prior.length-1].end;}
+  else if(all.length){var dd=new Date(all[0].date+"T00:00:00Z"); dd.setUTCDate(dd.getUTCDate()-1); asof=dd.toISOString().slice(0,10); balance=all[0].starting;}
+  var moves=[]; var seen={};
+  all.forEach(function(r){
+    if(asof && r.date<=asof) return;
+    if(r.out===0 && r.in===0) return;
+    var label=r.label || (r.out>0 && r.in>0 ? "Outflow + income" : (r.out>0 ? "Outflow" : "Income"));
+    var k=r.date+"|"+label+"|"+Math.abs(r.out)+"|"+Math.abs(r.in); if(seen[k]) return; seen[k]=true;
+    moves.push({date:r.date,label:label,out:Math.abs(r.out),in:Math.abs(r.in)});
+  });
+  return {all:all,moves:moves,asof:asof,balance:balance};
+}
+function parseBudgetRows(aoa){
+  var rows=[]; var headerIdx=-1, monthlyIdx=-1;
+  (aoa||[]).forEach(function(row,i){
+    if(headerIdx>=0 || !row) return;
+    for(var j=0;j<row.length;j++){if(typeof row[j]==="string" && row[j].trim().toLowerCase()==="monthly"){headerIdx=i; monthlyIdx=j; break;}}
+  });
+  if(headerIdx<0) return rows;
+  var map={"In":"Income","Mrtg":"Housing — mortgage","Mln":"Housing — loan","Util":"Housing — utilities","Groceries":"Groceries","Transportation":"Transportation","Other":"Other needs","IRA":"IRA investing","Discretionary":"Discretionary"};
+  for(var i=headerIdx+1;i<aoa.length;i++){
+    var row=aoa[i]; if(!row) continue; var amt=row[monthlyIdx]; if(typeof amt!=="number"||isNaN(amt)) continue;
+    var code=row[monthlyIdx-3]; var cat=row[monthlyIdx-4];
+    if(typeof code!=="string"||code.trim()===""||code.trim().toLowerCase()==="total") continue;
+    var name=map[code.trim()] || ((typeof cat==="string"&&cat.trim()!=="") ? cat.trim()+" — "+code.trim() : code.trim());
+    rows.push({id:"bxl-"+i,name:name,amount:amt});
+  }
+  return rows;
 }
 function loadSheetJS(){
   return new Promise(function(resolve,reject){
@@ -437,7 +475,7 @@ $("drop-zone").ondragover=function(e){e.preventDefault(); $("drop-zone").classLi
 $("drop-zone").ondragleave=function(){ $("drop-zone").classList.remove("drag-over"); };
 $("drop-zone").ondrop=function(e){e.preventDefault(); $("drop-zone").classList.remove("drag-over"); var f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if(f) setImportFile(f);};
 $("import-clear").onclick=function(){
-  $("import-file").value=""; currentImportFile=null; $("import-preview").style.display="none"; $("import-preview").src=""; ocrRows=[]; renderOCRReview();
+  $("import-file").value=""; currentImportFile=null; excelImportActive=false; excelBudget=[]; $("excel-meta").style.display="none"; $("import-preview").style.display="none"; $("import-preview").src=""; ocrRows=[]; renderOCRReview();
   $("import-status").textContent="File cleared.";
 };
 $("read-btn").onclick=async function(){
@@ -458,7 +496,7 @@ $("read-btn").onclick=async function(){
     return;
   }
   if(kind==="csv"){
-    try{var ctext=await f.text(); ocrRows=parseOCRText(ctext); renderOCRReview(); $("import-status").textContent=ocrRows.length?("CSV read: "+ocrRows.length+" candidate row(s). Check every date, out, and in below before applying."):"No dated rows found in that CSV. Try the Excel file instead, or use the paste fallback below.";}
+    try{var ctext=await f.text(); excelImportActive=false; excelBudget=[]; $("excel-meta").style.display="none"; ocrRows=parseOCRText(ctext); renderOCRReview(); $("import-status").textContent=ocrRows.length?("CSV read: "+ocrRows.length+" candidate row(s). Check every date, out, and in below before applying."):"No dated rows found in that CSV. Try the Excel file instead, or use the paste fallback below.";}
     catch(err){$("import-status").textContent="CSV read failed: "+err.message;}
     return;
   }
@@ -467,10 +505,15 @@ $("read-btn").onclick=async function(){
     try{
       var X=await loadSheetJS(); var buf=await f.arrayBuffer(); var wb=X.read(buf,{type:"array"});
       var names=wb.SheetNames.slice(); if(names.indexOf("Tracker")>=0){names=["Tracker"].concat(names.filter(function(n){return n!=="Tracker";}));}
-      var found=null, foundSheet="";
-      for(var si=0;si<names.length;si++){var ws=wb.Sheets[names[si]]; if(!ws) continue; var aoa=X.utils.sheet_to_json(ws,{header:1,raw:true,defval:null}); var r=parseExcelRows(aoa); if(r.length){found=r; foundSheet=names[si]; break;}}
-      ocrRows=found||[]; renderOCRReview();
-      $("import-status").textContent=ocrRows.length?("Excel read from sheet '"+foundSheet+"': "+ocrRows.length+" candidate row(s). Check every date, out, and in below before applying."):"No dated rows found in that Excel file. Try the Tracker tab, or a screenshot of it.";
+      var found=null, foundSheet="", foundParsed=null;
+      for(var si=0;si<names.length;si++){var ws=wb.Sheets[names[si]]; if(!ws) continue; var aoa=X.utils.sheet_to_json(ws,{header:1,raw:true,defval:null}); var parsed=parseExcelSheet(aoa); if(parsed.moves.length){found=parsed.moves; foundSheet=names[si]; foundParsed=parsed; break;}}
+      excelBudget=[];
+      if(wb.Sheets["Budget"]){var baoa=X.utils.sheet_to_json(wb.Sheets["Budget"],{header:1,raw:true,defval:null}); excelBudget=parseBudgetRows(baoa);}
+      ocrRows=found||[]; excelImportActive=!!foundParsed;
+      if(foundParsed){$("excel-asof").value=foundParsed.asof||""; $("excel-balance").value=foundParsed.balance||0; $("excel-meta").style.display="block";}
+      else {$("excel-meta").style.display="none";}
+      renderOCRReview();
+      $("import-status").textContent=ocrRows.length?("Excel read from sheet '"+foundSheet+"': "+ocrRows.length+" future move(s), as-of "+(foundParsed?foundParsed.asof:"?")+" balance $"+(foundParsed?foundParsed.balance:"?")+", plus "+excelBudget.length+" budget line(s). Check every row below before applying — Apply will also set your as-of, balance, and budget from Excel unless you clear those fields."):("No dated rows found in that Excel file. Try the Tracker tab, or a screenshot of it.");
     }catch(err){$("import-status").textContent="Excel read failed: "+err.message;}
     return;
   }
@@ -480,7 +523,7 @@ $("read-btn").onclick=async function(){
     $("import-status").textContent="Reading screenshot… this can take 20–60 seconds for a full Excel screen.";
     var result=await T.recognize(f, "eng");
     var text=(result && result.data && result.data.text) || "";
-    ocrRows=parseOCRText(text); renderOCRReview();
+    excelImportActive=false; excelBudget=[]; $("excel-meta").style.display="none"; ocrRows=parseOCRText(text); renderOCRReview();
     $("import-status").textContent=ocrRows.length?("OCR found "+ocrRows.length+" candidate row(s). Check every date, out, and in below before applying — OCR misreads are common.") : ("OCR found no dated rows. Try a tighter crop of the Tracker rows with YYYY-MM-DD dates, the Excel file itself, or the paste fallback below. Raw text starts: "+text.slice(0,200));
   }catch(err){$("import-status").textContent="OCR failed: "+err.message;}
 };
@@ -489,7 +532,7 @@ $("copy-muse-btn").onclick=function(){
   if(navigator.clipboard && navigator.clipboard.writeText){navigator.clipboard.writeText(msg).then(function(){$("import-status").textContent="Message copied. Paste it in chat with your screenshot attached.";}).catch(function(){$("import-status").textContent=msg;});} else {$("import-status").textContent=msg;}
 };
 $("paste-btn").onclick=function(){
-  ocrRows=parseOCRText($("paste-text").value||""); renderOCRReview();
+  excelImportActive=false; excelBudget=[]; $("excel-meta").style.display="none"; ocrRows=parseOCRText($("paste-text").value||""); renderOCRReview();
   $("import-status").textContent=ocrRows.length?("Parsed "+ocrRows.length+" row(s) from pasted text. Review below before applying."):"No dated rows found in pasted text.";
 };
 $("range-filter").onchange=function(){rangeFilter=$("range-filter").value; renderUpcoming();};
@@ -538,6 +581,7 @@ $("ocr-apply").onclick=function(){
     if($("ocr-mode").value==="merge" && exists){skipped++; return;}
     state.events.push({id:"ocr-"+Date.now()+"-"+added, date:r.date, label:r.label, out:r.out, in:r.in, paid:false}); added++;
   });
+  if(excelImportActive && $("excel-asof").value && $("excel-balance").value!==""){state.asof=$("excel-asof").value; state.balance=Number($("excel-balance").value)||0; if(excelBudget.length) state.budget=deepCopy(excelBudget);}
   save(); renderAll(); $("ocr-note").textContent="Applied "+added+" row(s)"+(skipped?" · skipped "+skipped+" duplicate(s)":"")+". Check the timeline — balances recalculated.";
   ocrRows=[]; renderOCRReview();
 };
