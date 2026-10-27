@@ -492,6 +492,55 @@ $("paste-btn").onclick=function(){
   ocrRows=parseOCRText($("paste-text").value||""); renderOCRReview();
   $("import-status").textContent=ocrRows.length?("Parsed "+ocrRows.length+" row(s) from pasted text. Review below before applying."):"No dated rows found in pasted text.";
 };
+$("range-filter").onchange=function(){rangeFilter=$("range-filter").value; renderUpcoming();};
+$("type-filter").onchange=function(){typeFilter=$("type-filter").value; renderUpcoming();};
+$("search").oninput=function(){searchText=$("search").value.trim().toLowerCase(); renderUpcoming();};
+$("edit-save").onclick=function(){
+  var name=$("edit-name").value.trim(); var date=$("edit-date").value; var out=Number($("edit-out").value)||0; var inn=Number($("edit-in").value)||0;
+  if(!name){$("edit-note").textContent="Add a name first."; return;}
+  if(!date){$("edit-note").textContent="Pick a date first."; return;}
+  if(out<0||inn<0){$("edit-note").textContent="Amounts cannot be negative."; return;}
+  if(out===0&&inn===0){$("edit-note").textContent="Add an out or in amount."; return;}
+  if(editingId){var e=state.events.find(function(x){return x.id===editingId;}); if(e){e.label=name; e.date=date; e.out=out; e.in=inn;}}
+  else {state.events.push({id:"m-"+Date.now(),date:date,label:name,out:out,in:inn,paid:false});}
+  var wasEditing=!!editingId; save(); renderAll(); clearEditForm(); $("edit-note").textContent=wasEditing?"Saved. Form cleared for a new move.":"Added. It now updates every total and chart.";
+};
+$("edit-cancel").onclick=function(){clearEditForm();};
+$("edit-delete").onclick=function(){if(editingId) deleteEvent(editingId);};
+$("budget-add-btn").onclick=function(){
+  var name=$("budget-add-name").value.trim(); var amt=Number($("budget-add-amount").value);
+  if(!name||$("budget-add-amount").value===""||isNaN(amt)){alert("Add a budget line name and amount."); return;}
+  state.budget.push({id:"b-"+Date.now(),name:name,amount:amt}); $("budget-add-name").value=""; $("budget-add-amount").value=""; save(); renderAll();
+};
+
+function applyTheme(theme){document.documentElement.setAttribute("data-theme",theme); try{localStorage.setItem("budget-bill-tracker-theme",theme);}catch(e){} var _b=$("themeBtn"); if(_b) _b.textContent=theme==="dark"?"☀️ Light mode":"🌙 Dark mode"; var _m=document.querySelector('meta[name="theme-color"]'); if(_m) _m.setAttribute("content",theme==="dark"?"#0B0D10":"#F7F3EB");}
+var _savedTheme="light"; try{_savedTheme=localStorage.getItem("budget-bill-tracker-theme")||"light";}catch(e){} if(_savedTheme!=="dark"&&_savedTheme!=="light") _savedTheme="light"; applyTheme(_savedTheme);
+$("themeBtn").onclick=function(){var cur=document.documentElement.getAttribute("data-theme")||"light"; applyTheme(cur==="dark"?"light":"dark");};
+if(document.addEventListener){document.addEventListener("gesturestart",function(e){e.preventDefault();});}
+$("demoBtn").onclick=function(){
+  if(demoMode) return;
+  personalState=deepCopy(state); state=deepCopy(DEMO); demoMode=true;
+  $("demo-banner").style.display="block"; $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll();
+};
+$("exitDemoBtn").onclick=function(){
+  if(!demoMode) return;
+  state=personalState||deepCopy(SNAPSHOT); personalState=null; demoMode=false;
+  $("demo-banner").style.display="none"; $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll();
+};
+
+$("ocr-apply").onclick=function(){
+  var rows=collectOCRReview();
+  if(!rows.length){$("ocr-note").textContent="No valid reviewed rows to apply."; return;}
+  if($("ocr-mode").value==="replace"){state.events=state.events.filter(function(e){return e.paid;});}
+  var added=0, skipped=0;
+  rows.forEach(function(r){
+    var exists=state.events.some(function(e){return e.date===r.date && e.label===r.label && e.out===r.out && e.in===r.in && !e.paid;});
+    if($("ocr-mode").value==="merge" && exists){skipped++; return;}
+    state.events.push({id:"ocr-"+Date.now()+"-"+added, date:r.date, label:r.label, out:r.out, in:r.in, paid:false}); added++;
+  });
+  save(); renderAll(); $("ocr-note").textContent="Applied "+added+" row(s)"+(skipped?" · skipped "+skipped+" duplicate(s)":"")+". Check the timeline — balances recalculated.";
+  ocrRows=[]; renderOCRReview();
+};
 $("asof").value=state.asof; $("balance").value=state.balance; renderAll();
 </script>
 </body></html>
