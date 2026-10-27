@@ -35,7 +35,7 @@ section#overview{background:var(--input-bg);border:1px solid var(--line);border-
 .move{border:1px solid var(--line);border-left-width:4px;border-radius:12px;padding:14px 16px;margin-bottom:10px;background:var(--input-bg)} .move-out{border-left-color:var(--danger)} .move-in{border-left-color:var(--accent)} .move-both{border-left-color:var(--accent)}
 .move-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap} .move-nums{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px}
 .move-actions{display:flex;gap:8px;margin-top:10px} .move-actions button{flex:1;min-height:44px}
-input,select{font:inherit;font-size:16px;padding:12px;border-radius:8px;border:1px solid var(--input-border);background:var(--input-bg);color:var(--ink);width:100%}
+input,select,textarea{font:inherit;font-size:16px;padding:12px;border-radius:8px;border:1px solid var(--input-border);background:var(--input-bg);color:var(--ink);width:100%}
 button{font:inherit;font-size:16px;padding:12px 16px;min-height:44px;border-radius:8px;border:1px solid var(--ink);background:var(--input-bg);color:var(--ink);cursor:pointer;font-weight:700}
 button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)} button.danger{color:var(--danger);border-color:var(--danger)}
 label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
@@ -46,14 +46,15 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-wei
 .month-label{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .hbar{display:flex;gap:10px;align-items:center;margin-top:6px} .hbar-track{flex:1;height:12px;background:var(--track);border-radius:99px;overflow:hidden} .hbar-track i{display:block;height:100%} .hbar-track i.out{background:var(--danger)} .hbar-track i.inn{background:var(--accent)}
 .budget-row{border-top:1px solid var(--line);padding:12px 0} .budget-row:last-child{border-bottom:1px solid var(--line)}
+.ocr-row{display:grid;grid-template-columns:150px 1fr 110px 110px 44px;gap:8px;align-items:center;margin-bottom:8px} @media(max-width:560px){.ocr-row{grid-template-columns:1fr 1fr}.ocr-row input[data-ocr-date]{grid-column:1/-1}.ocr-row input[data-ocr-label]{grid-column:1/-1}}
 .budget-edit{display:grid;grid-template-columns:1fr 150px 44px;gap:8px;align-items:center} @media(max-width:560px){.budget-edit{grid-template-columns:1fr 44px}.budget-edit input[data-bname]{grid-column:1/-1}}
 </style></head><body><div class="wrap">
-<nav><a href="#overview">Overview</a><a href="#controls">Controls</a><a href="#edit">Add / Edit</a><a href="#timeline">Timeline</a><a href="#charts">Charts</a><a href="#budget">Budget</a><button id="themeBtn" style="margin-left:auto">🌙 Dark mode</button></nav>
-<div id="demo-banner" style="display:none;background:var(--banner-bg);border:1px solid var(--banner-border);border-radius:8px;padding:12px;margin:16px 0"><b>Demo mode — fictional data, not your real numbers.</b> Your personal data is saved and untouched, and demo edits are not saved. <button id="exitDemoBtn">Exit demo</button></div>
+<nav><a href="#overview">Overview</a><a href="#controls">Controls</a><a href="#screenshot">Screenshot</a><a href="#edit">Add / Edit</a><a href="#timeline">Timeline</a><a href="#charts">Charts</a><a href="#budget">Budget</a><button id="themeBtn" style="margin-left:auto">🌙 Dark mode</button></nav>
+<div id="demo-banner" style="display:none;background:var(--banner-bg);border:1px solid var(--banner-border);border-radius:8px;padding:12px;margin:16px 0"><b>Demo mode — fictional data.</b> Demo edits are not saved. <button id="exitDemoBtn">Exit demo</button></div>
 <div id="js-banner"><b>Snapshot view</b> — blank to start, shown even if scripts are blocked. Add your first bill, or load demo data to see how it works. Open in a real browser to edit, mark paid, and redraw the charts. In preview, buttons and inputs will not run — that is the viewer, not a broken file.</div>
 <p class="muted">Demo-friendly · Start blank or load demo data · Your data stays in your browser only</p>
 <h1 class="serif">Bill Tracker</h1>
-<p class="muted">A paper ledger for the same question: how far out is each bill, and what does checking look like after it? Same numbers, same saved edits as v2 — a completely different page around them.</p>
+<p class="muted">A paper ledger for the same question: how far out is each bill, and what does checking look like after it? Start blank, or load demo data to see how it works.</p>
 
 <section id="overview">
 <h2>Overview</h2>
@@ -73,11 +74,26 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-wei
 <div class="field"><label>Checking balance on that date ($)</label><input type="number" id="balance" value="0" step="1"></div>
 <p class="muted small">Typing in these two fields updates the overview and charts immediately. If you move as-of by hand, update the balance to your actual balance on that date.</p>
 <p><button id="rollBtn">Roll forward to today</button> <button id="demoBtn">Load demo data</button></p>
-<p><button id="resetBtn">Reset to Excel snapshot</button> <button id="exportBtn">Export backup (JSON)</button></p>
+<p><button id="resetBtn">Reset to blank start</button> <button id="exportBtn">Export backup (JSON)</button></p>
 <div class="field"><label>Import a backup</label><input type="file" id="import-file" accept=".json,application/json"></div>
 <div class="field"><label>Show</label><select id="range-filter"><option value="all">All upcoming</option><option value="7">Next 7 days</option><option value="30">Next 30 days</option></select></div>
 <div class="field"><label>Move type</label><select id="type-filter"><option value="all">All moves</option><option value="out">Bills out only</option><option value="in">Money in only</option></select></div>
 <div class="field"><label>Search bills</label><input id="search" placeholder="Search bills…"></div>
+</section>
+
+<section id="screenshot">
+<h2>Update from a screenshot — browser only</h2>
+<p class="muted small">Two routes, honestly labeled. <b>Route A — in-app OCR:</b> pick a screenshot of your Excel Tracker, tap Try OCR, review the draft rows, fix anything, then Apply. <b>Route B — send to your AI assistant (more accurate):</b> copy the message below, send it with your screenshot in chat, and have it rebuild the snapshot from it.</p>
+<div class="field"><label>Screenshot image</label><input type="file" id="shot-file" accept="image/*"></div>
+<img id="shot-preview" style="display:none;max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;margin-bottom:12px" alt="Screenshot preview">
+<p><button class="primary" id="ocr-btn">Try in-app OCR</button> <button id="ocr-clear">Clear screenshot</button> <button id="copy-muse-btn">Copy message for your AI assistant</button></p>
+<p class="muted small" id="ocr-status">No screenshot loaded yet. OCR loads Tesseract.js from a CDN only when you tap Try OCR — the library downloads to your browser, the image itself never leaves your device for OCR. If you prefer no third-party download at all, use Route B.</p>
+<div class="field"><label>How to apply reviewed rows</label><select id="ocr-mode"><option value="merge">Merge — skip exact duplicates already in the tracker</option><option value="replace">Replace all upcoming moves with reviewed rows</option></select></div>
+<div id="ocr-review"></div>
+<p><button class="primary" id="ocr-apply" style="display:none">Apply reviewed rows</button> <span class="muted small" id="ocr-note"></span></p>
+<div class="field"><label>Or paste copied Excel rows (fallback if OCR misreads)</label><textarea id="paste-text" rows="4" placeholder="2026-11-12  2400  0  Credit Card"></textarea></div>
+<p><button id="paste-btn">Parse pasted rows</button></p>
+<p class="muted small">OCR is a draft, not a promise: small Excel text, gridlines, and $ signs misread often. Always check the review table — especially dates and out vs in — before you tap Apply. Applying does not write back to Excel; it updates this app's browser data only. OCR works best on Excel Tracker screenshots with YYYY-MM-DD dates; app timeline screenshots with "Nov 26" only are guessed from your as-of year and need extra checking.</p>
 </section>
 
 <section id="edit">
@@ -102,10 +118,10 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-wei
 
 <section id="charts">
 <h2>Charts</h2>
-<h2>Forecast — full, to Jan 8, 2027</h2>
+<h2>Forecast — full</h2>
 <div id="forecast-wrap"><p class="muted small">No data yet.</p></div>
 <p class="muted small">The full forecast shows every move to the end of your list. The tight-period chart below crops to the early moves, so a dip is visible even when a later spike towers over it.</p>
-<h2 style="margin-top:28px">Forecast — tight period only, to Dec 11</h2>
+<h2 style="margin-top:28px">Forecast — tight period only</h2>
 <div id="zoom-wrap"><p class="muted small">No data yet.</p></div>
 <p class="muted small">Same line, cropped to the early moves, so a dip is visible even when a later spike towers over it. This chart redraws live in a browser when you edit a move.</p>
 <h2 style="margin-top:28px">Money by month — out vs in</h2>
@@ -118,7 +134,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-wei
 <section id="budget">
 <h2>Monthly budget — editable in a browser</h2>
 <p class="muted small" id="budget-totals">Income <b class="green">$0/mo</b> · Out <b>$0/mo</b> · Surplus <b>$0/mo</b>.</p>
-<p class="muted small">In preview, these are the baked Excel lines. In a browser, each line becomes editable: change the name or amount and press Enter or tap away, and the totals and bars update. Negative = money out, positive = income.</p>
+<p class="muted small">In preview, this is blank to start. In a browser, each line becomes editable: change the name or amount and press Enter or tap away, and the totals and bars update. Negative = money out, positive = income.</p>
 <div id="budget-body"><p class="muted small">No budget lines yet.</p></div>
 <div style="margin-top:18px">
 <div class="field"><label>New budget line name</label><input id="budget-add-name" placeholder="e.g. Streaming"></div>
@@ -271,6 +287,58 @@ function renderBudget(){
   document.querySelectorAll("[data-bamt]").forEach(function(inp){inp.onchange=function(){var b=state.budget.find(function(x){return x.id===inp.getAttribute("data-bamt");}); if(b){b.amount=Number(inp.value)||0; save(); renderBudget();};};});
   document.querySelectorAll("[data-bdel]").forEach(function(btn){btn.onclick=function(){state.budget=state.budget.filter(function(x){return x.id!==btn.getAttribute("data-bdel");}); save(); renderAll();};});
 }
+let ocrRows=[];
+function parseOCRText(text){
+  var rows=[]; var lines=String(text||"").split(/\r?\n/);
+  var months={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  lines.forEach(function(line){
+    var raw=line.trim(); if(!raw) return;
+    var date=null; var dateStr=null;
+    var m=raw.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(m){date=m[1]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[3]).padStart(2,"0"); dateStr=m[0];}
+    else {var m2=raw.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m2){date=m2[3]+"-"+String(m2[1]).padStart(2,"0")+"-"+String(m2[2]).padStart(2,"0"); dateStr=m2[0];}}
+    if(!date){
+      var mm=raw.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{1,2})/i);
+      if(mm){var mo=months[mm[1].toLowerCase().slice(0,3)]; var yr=parseInt((state.asof||"2026-10-27").slice(0,4),10); var asofMo=parseInt((state.asof||"2026-10-27").slice(5,7),10); if(mo<asofMo) yr+=1; date=yr+"-"+String(mo).padStart(2,"0")+"-"+String(mm[2]).padStart(2,"0"); dateStr=mm[0];}
+    }
+    if(!date) return;
+    var rest=raw; if(dateStr) rest=rest.replace(dateStr,"");
+    var nums=[]; var nm; var re=/-?\$?[\d,]+(?:\.\d+)?/g;
+    while((nm=re.exec(rest))!==null){var v=parseFloat(nm[0].replace(/[$,]/g,"")); if(!isNaN(v)) nums.push(v);}
+    var label=rest.replace(/-?\$?[\d,]+(?:\.\d+)?/g,"").replace(/[$,]/g,"").replace(/\b(out|in|balance|after|starting|end|bal)\b/gi,"").replace(/\s+/g," ").trim();
+    label=label.replace(/^[^A-Za-z0-9]+/,"").replace(/[^A-Za-z0-9]+$/,"").trim();
+    var out=0, inn=0;
+    if(nums.length>=3){out=nums[1]; inn=nums[2];}
+    else if(nums.length===2){out=nums[0]; inn=0;}
+    else if(nums.length===1){out=nums[0]; inn=0;}
+    if(out===0 && inn===0) return;
+    if(!label) label=out?"Outflow":"Income";
+    rows.push({date:date,label:label,out:Math.abs(out),in:Math.abs(inn)});
+  });
+  var seen={}; return rows.filter(function(r){var k=r.date+"|"+r.label+"|"+r.out+"|"+r.in; if(seen[k]) return false; seen[k]=true; return true;});
+}
+function renderOCRReview(){
+  if(!ocrRows.length){$("ocr-review").innerHTML="<p class='muted small'>No reviewed rows yet.</p>"; $("ocr-apply").style.display="none"; return;}
+  var html="<p class='muted small'>Review every row — dates and out vs in are the parts OCR gets wrong most.</p>";
+  ocrRows.forEach(function(r,i){
+    html+="<div class='ocr-row'><input data-ocr-date value='"+esc(r.date)+"'><input data-ocr-label value='"+esc(r.label)+"'><input data-ocr-out type='number' value='"+r.out+"'><input data-ocr-in type='number' value='"+r.in+"'><button data-ocr-del='"+i+"'>×</button></div>";
+  });
+  $("ocr-review").innerHTML=html; $("ocr-apply").style.display="inline-block";
+  document.querySelectorAll("[data-ocr-del]").forEach(function(b){b.onclick=function(){ocrRows.splice(parseInt(b.getAttribute("data-ocr-del"),10),1); renderOCRReview();};});
+}
+function collectOCRReview(){
+  var out=[]; document.querySelectorAll(".ocr-row").forEach(function(row){
+    var d=row.querySelector("[data-ocr-date]"); var l=row.querySelector("[data-ocr-label]"); var o=row.querySelector("[data-ocr-out]"); var inn=row.querySelector("[data-ocr-in]");
+    if(!d||!l) return; var date=d.value.trim(); var label=l.value.trim(); var outv=Number(o?o.value:0)||0; var inv=Number(inn?inn.value:0)||0;
+    if(date && label && (outv!==0||inv!==0)) out.push({date:date,label:label,out:Math.abs(outv),in:Math.abs(inv)});
+  }); return out;
+}
+function loadTesseract(){
+  return new Promise(function(resolve,reject){
+    if(window.Tesseract) return resolve(window.Tesseract);
+    var s=document.createElement("script"); s.src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"; s.onload=function(){resolve(window.Tesseract);}; s.onerror=function(){reject(new Error("Could not load Tesseract.js — check internet and try again."));}; document.head.appendChild(s);
+  });
+}
 function renderAll(){renderHero(); renderUpcoming(); renderPaid(); renderCharts(); renderBudget();}
 function clearEditForm(){
   editingId=null; $("edit-name").value=""; $("edit-date").value="2026-11-05"; $("edit-out").value=""; $("edit-in").value="";
@@ -299,7 +367,7 @@ $("rollBtn").onclick=function(){
   state.events.filter(function(e){return !e.paid && e.date>state.asof && e.date<=todayStr;}).sort(function(a,b){return a.date<b.date?-1:1;}).forEach(function(e){run=run-e.out+e.in;});
   state.asof=todayStr; state.balance=run; $("asof").value=todayStr; $("balance").value=run; save(); renderAll();
 };
-$("resetBtn").onclick=function(){if(demoMode){alert("Exit demo first to reset your real data."); return;} if(!confirm("Reset everything to the Excel snapshot? Your browser edits will be lost.")) return; localStorage.removeItem(KEY); state=deepCopy(SNAPSHOT); clearEditForm(); $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll();};
+$("resetBtn").onclick=function(){if(demoMode){alert("Exit demo first to reset your real data."); return;} if(!confirm("Reset everything to the blank start? Your browser edits will be lost.")) return; localStorage.removeItem(KEY); state=deepCopy(SNAPSHOT); clearEditForm(); $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll();};
 $("exportBtn").onclick=function(){var blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}); var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="bill-tracker-backup.json"; a.click(); URL.revokeObjectURL(a.href);};
 $("import-file").onchange=function(ev){
   var f=ev.target.files && ev.target.files[0]; if(!f) return;
@@ -347,6 +415,49 @@ $("exitDemoBtn").onclick=function(){
   if(!demoMode) return;
   state=personalState||deepCopy(SNAPSHOT); personalState=null; demoMode=false;
   $("demo-banner").style.display="none"; $("asof").value=state.asof; $("balance").value=state.balance; save(); renderAll();
+};
+$("shot-file").onchange=function(){
+  var f=$("shot-file").files && $("shot-file").files[0]; if(!f) return;
+  var img=$("shot-preview"); img.src=URL.createObjectURL(f); img.style.display="block";
+  $("ocr-status").textContent="Screenshot loaded. Tap Try in-app OCR, or use the paste fallback below.";
+};
+$("ocr-clear").onclick=function(){
+  $("shot-file").value=""; $("shot-preview").style.display="none"; $("shot-preview").src=""; ocrRows=[]; renderOCRReview();
+  $("ocr-status").textContent="Screenshot cleared.";
+};
+$("ocr-btn").onclick=async function(){
+  var f=$("shot-file").files && $("shot-file").files[0];
+  if(!f){$("ocr-status").textContent="Pick a screenshot image first."; return;}
+  $("ocr-status").textContent="Loading OCR… (first time downloads the OCR library; your image stays on this device.)";
+  try{
+    var T=await loadTesseract();
+    $("ocr-status").textContent="Reading screenshot… this can take 20–60 seconds for a full Excel screen.";
+    var result=await T.recognize(f, "eng");
+    var text=(result && result.data && result.data.text) || "";
+    ocrRows=parseOCRText(text); renderOCRReview();
+    $("ocr-status").textContent=ocrRows.length?("OCR found "+ocrRows.length+" candidate row(s). Check every date, out, and in below before applying — OCR misreads are common.") : ("OCR found no dated rows. Try a tighter crop of the Tracker rows with YYYY-MM-DD dates, or use the paste fallback below. Raw text starts: "+text.slice(0,200));
+  }catch(err){$("ocr-status").textContent="OCR failed: "+err.message;}
+};
+$("copy-muse-btn").onclick=function(){
+  var msg="Please update my Bill Tracker from the screenshot I'm sending with this message. Extract the Tracker rows (date, out, in, label), keep my existing labels, don't invent bill names for unlabeled rows, and rebuild the app snapshot from the new numbers. Show me what changed before you finalize.";
+  if(navigator.clipboard && navigator.clipboard.writeText){navigator.clipboard.writeText(msg).then(function(){$("ocr-status").textContent="Message copied. Paste it in chat with your screenshot attached.";}).catch(function(){$("ocr-status").textContent=msg;});} else {$("ocr-status").textContent=msg;}
+};
+$("paste-btn").onclick=function(){
+  ocrRows=parseOCRText($("paste-text").value||""); renderOCRReview();
+  $("ocr-status").textContent=ocrRows.length?("Parsed "+ocrRows.length+" row(s) from pasted text. Review below before applying."):"No dated rows found in pasted text.";
+};
+$("ocr-apply").onclick=function(){
+  var rows=collectOCRReview();
+  if(!rows.length){$("ocr-note").textContent="No valid reviewed rows to apply."; return;}
+  if($("ocr-mode").value==="replace"){state.events=state.events.filter(function(e){return e.paid;});}
+  var added=0, skipped=0;
+  rows.forEach(function(r){
+    var exists=state.events.some(function(e){return e.date===r.date && e.label===r.label && e.out===r.out && e.in===r.in && !e.paid;});
+    if($("ocr-mode").value==="merge" && exists){skipped++; return;}
+    state.events.push({id:"ocr-"+Date.now()+"-"+added, date:r.date, label:r.label, out:r.out, in:r.in, paid:false}); added++;
+  });
+  save(); renderAll(); $("ocr-note").textContent="Applied "+added+" row(s)"+(skipped?" · skipped "+skipped+" duplicate(s)":"")+". Check the timeline — balances recalculated.";
+  ocrRows=[]; renderOCRReview();
 };
 $("asof").value=state.asof; $("balance").value=state.balance; renderAll();
 </script>
